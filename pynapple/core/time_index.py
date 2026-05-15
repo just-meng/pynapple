@@ -44,15 +44,14 @@ class TsIndex(np.ndarray):
             Description
         """
         if units == "s":
-            t = np.around(t, nap_config.time_index_precision)
+            return t
+        #     t = np.around(t, nap_config.time_index_precision)
         elif units == "ms":
-            t = np.around(t / 1.0e3, nap_config.time_index_precision)
+            return np.around(t / 1.0e3, nap_config.time_index_precision)
         elif units == "us":
-            t = np.around(t / 1.0e6, nap_config.time_index_precision)
+            return np.around(t / 1.0e6, nap_config.time_index_precision)
         else:
             raise ValueError("unrecognized time units type")
-
-        return t
 
     @staticmethod
     def return_timestamps(t, units="s"):
@@ -77,15 +76,14 @@ class TsIndex(np.ndarray):
             IF units is not in ['s', 'ms', 'us']
         """
         if units == "s":
-            t = np.around(t, nap_config.time_index_precision)
+            return t
+        #     t = np.around(t)#, nap_config.time_index_precision)
         elif units == "ms":
-            t = np.around(t * 1.0e3, nap_config.time_index_precision)
+            return np.around(t * 1.0e3, nap_config.time_index_precision)
         elif units == "us":
-            t = np.around(t * 1.0e6, nap_config.time_index_precision)
+            return np.around(t * 1.0e6, nap_config.time_index_precision)
         else:
             raise ValueError("unrecognized time units type")
-
-        return t
 
     @staticmethod
     def sort_timestamps(t, give_warning=True):
