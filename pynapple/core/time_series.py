@@ -406,8 +406,9 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         And bintsd automatically inherit ep as time support:
 
         >>> bintsd.time_support
-        >>>    start    end
-        >>> 0  10.0     80.0
+          index    start    end
+              0       10     80
+        shape: (1, 2), time unit: sec.
         """
         if not isinstance(ep, IntervalSet):
             ep = self.time_support
@@ -541,13 +542,13 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         0.05 second and the windowsize is 2 second. When instantiating the gaussian kernel
         from scipy, it corresponds to parameters `M = 200` and `std=5`
 
-            >>> tsd.smooth(std=0.05, windowsize=2, time_units='s', norm=False)
+            >>> tsd.smooth(std=0.05, windowsize=2, time_units='s', norm=False)  # doctest: +SKIP
 
         This line is equivalent to :
 
-            >>> from scipy.signal.windows import gaussian
-            >>> kernel = gaussian(M = 200, std=5)
-            >>> tsd.convolve(window)
+            >>> from scipy.signal.windows import gaussian  # doctest: +SKIP
+            >>> kernel = gaussian(M = 200, std=5)  # doctest: +SKIP
+            >>> tsd.convolve(window)  # doctest: +SKIP
 
         It is generally a good idea to visualize the kernel before applying any convolution.
 
@@ -634,18 +635,20 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
             >>> import pynapple as nap
             >>> import numpy as np
+            >>> import matplotlib
+            >>> matplotlib.use("Agg")
             >>> import matplotlib.pyplot as plt
             >>> noisy_data = np.random.rand(100) + np.sin(np.linspace(0, 2 * np.pi, 100))
             >>> tsd = nap.Tsd(t=np.arange(100), d=noisy_data)
             >>> new_tsd = tsd.decimate(down=4)
             >>> plt.plot(tsd, color="k", label="original") #doctest: +ELLIPSIS
-            [<matplotlib.lines.Line2D at ...
+            [<matplotlib.lines.Line2D object at 0x...>]
             >>> plt.plot(new_tsd, color="r", marker="o", label="decimate") #doctest: +ELLIPSIS
-            [<matplotlib.lines.Line2D at ...
+            [<matplotlib.lines.Line2D object at 0x...>]
             >>> plt.plot(tsd[::4], color="g", marker="o", label="naive downsample") #doctest: +ELLIPSIS
-            [<matplotlib.lines.Line2D at ...
+            [<matplotlib.lines.Line2D object at 0x...>]
             >>> plt.legend() #doctest: +ELLIPSIS
-            <matplotlib.legend.Legend at ...
+            <matplotlib.legend.Legend object at 0x...>
             >>> plt.show()
 
         """
@@ -873,6 +876,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 [ 40.,  41.,  42.,  43.,  44.,  nan,  nan,  nan,  nan],
                 [ 60.,  61.,  62.,  63.,  64.,  65.,  66.,  nan,  nan],
                 [ 80.,  81.,  82.,  83.,  84.,  85.,  86.,  87.,  88.]],
+        <BLANKLINE>
                [[120., 121., 122.,  nan,  nan,  nan,  nan,  nan,  nan],
                 [140., 141., 142., 143., 144.,  nan,  nan,  nan,  nan],
                 [160., 161., 162., 163., 164., 165., 166.,  nan,  nan],
@@ -923,16 +927,16 @@ class TsdTensor(_BaseTsd):
     >>> tsdtensor
     Time (s)
     ----------  -------------------------------
-    0           [[-1.493178 ... -1.281017] ...]
-    1           [[0.230829 ... 0.437679] ...]
-    2           [[-0.462031 ...  0.344506] ...]
-    3           [[0.497019 ... 0.469494] ...]
-    4           [[0.065921 ... 1.012917] ...]
-    5           [[0.158534 ... 1.455523] ...]
-    6           [[-2.567728 ...  0.61182 ] ...]
-    7           [[0.940799 ... 0.109203] ...]
-    8           [[2.340077 ... 0.21885 ] ...]
-    9           [[-0.306175 ... -0.447414] ...]
+    0           [[1.444173 ... 0.175421] ...]
+    1           [[-2.647253 ... -0.218104] ...]
+    2           [[ 0.640904 ... -0.024277] ...]
+    3           [[-0.80603  ...  0.286974] ...]
+    4           [[ 0.454563 ... -1.591314] ...]
+    5           [[-0.648552 ...  0.274006] ...]
+    6           [[-0.0971   ...  1.138171] ...]
+    7           [[-0.415867 ...  0.515273] ...]
+    8           [[0.631446 ... 0.108669] ...]
+    9           [[-0.087109 ...  1.378275] ...]
     dtype: float64, shape: (10, 2, 3)
 
     Initialize a TsdTensor with `time_support`:
@@ -944,11 +948,11 @@ class TsdTensor(_BaseTsd):
     >>> tsdtensor
     Time (s)
     ----------  -------------------------------
-    0           [[-1.493178 ... -1.281017] ...]
-    1           [[0.230829 ... 0.437679] ...]
-    2           [[-0.462031 ...  0.344506] ...]
-    3           [[0.497019 ... 0.469494] ...]
-    4           [[0.065921 ... 1.012917] ...]
+    0           [[-1.49383  ... -0.604628] ...]
+    1           [[-0.906036 ... -0.235457] ...]
+    2           [[0.043272 ... 0.151369] ...]
+    3           [[0.409413 ... 1.101657] ...]
+    4           [[-0.464507 ...  0.317805] ...]
     dtype: float64, shape: (5, 2, 3)
 
     """
@@ -1219,22 +1223,22 @@ class TsdTensor(_BaseTsd):
         >>> tsdtensor = nap.TsdTensor(t=t, d=np.random.randn(len(t), 4, 4))
         >>> tsdtensor.in_interval(ep)
         Time (s)
-        ----------  --
-        0.0          1
-        1.0          1
-        2.0          1
-        3.0          1
-        4.0          1
-        5.0          1
-        6.0          1
+        ----------  -----
+        0.0         True
+        1.0         True
+        2.0         True
+        3.0         True
+        4.0         True
+        5.0         True
+        6.0         True
         ...
-        93.0         0
-        94.0         0
-        95.0         0
-        96.0         0
-        97.0         0
-        98.0         0
-        99.0         0
+        93.0        False
+        94.0        False
+        95.0        False
+        96.0        False
+        97.0        False
+        98.0        False
+        99.0        False
         dtype: bool, shape: (100,)
         """
         return _Base.in_interval(self, iset)
@@ -1372,11 +1376,11 @@ class TsdTensor(_BaseTsd):
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsdtensor = nap.TsdTensor(t=np.array([0., 1.]), d = np.zeros((2,3,4)))
-        >>> tsdtensor.save("my_path/my_tsdtensor.npz")
+        >>> tsdtensor.save("my_tsdtensor.npz")
 
         To load you file, you can use the `nap.load_file` function :
 
-        >>> tsdtensor = nap.load_file("my_path/my_tsdtensor.npz")
+        >>> tsdtensor = nap.load_file("my_tsdtensor.npz")
 
         Raises
         ------
@@ -1432,38 +1436,46 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
     >>> d = np.ones((100, 3))
     >>> tsdframe = nap.TsdFrame(t=t, d=d)
     >>> tsdframe
-    Time (s)    0    1    2
+    Time (s)      0    1    2
     ----------  ---  ---  ---
-    0.0         1.0  1.0  1.0
-    1.0         1.0  1.0  1.0
-    2.0         1.0  1.0  1.0
-    3.0         1.0  1.0  1.0
-    4.0         1.0  1.0  1.0
-    ...         ...  ...  ...
-    95.0        1.0  1.0  1.0
-    96.0        1.0  1.0  1.0
-    97.0        1.0  1.0  1.0
-    98.0        1.0  1.0  1.0
-    99.0        1.0  1.0  1.0
+    0.0           1    1    1
+    1.0           1    1    1
+    2.0           1    1    1
+    3.0           1    1    1
+    4.0           1    1    1
+    5.0           1    1    1
+    6.0           1    1    1
+    ...
+    93.0          1    1    1
+    94.0          1    1    1
+    95.0          1    1    1
+    96.0          1    1    1
+    97.0          1    1    1
+    98.0          1    1    1
+    99.0          1    1    1
     dtype: float64, shape: (100, 3)
 
     Initialize a TsdFrame with column names:
 
     >>> tsdframe = nap.TsdFrame(t=t, d=d, columns=['A', 'B', 'C'])
     >>> tsdframe
-    Time (s)    A    B    C
+    Time (s)      A    B    C
     ----------  ---  ---  ---
-    0.0         1.0  1.0  1.0
-    1.0         1.0  1.0  1.0
-    2.0         1.0  1.0  1.0
-    3.0         1.0  1.0  1.0
-    4.0         1.0  1.0  1.0
-    ...         ...  ...  ...
-    95.0        1.0  1.0  1.0
-    96.0        1.0  1.0  1.0
-    97.0        1.0  1.0  1.0
-    98.0        1.0  1.0  1.0
-    99.0        1.0  1.0  1.0
+    0.0           1    1    1
+    1.0           1    1    1
+    2.0           1    1    1
+    3.0           1    1    1
+    4.0           1    1    1
+    5.0           1    1    1
+    6.0           1    1    1
+    ...
+    93.0          1    1    1
+    94.0          1    1    1
+    95.0          1    1    1
+    96.0          1    1    1
+    97.0          1    1    1
+    98.0          1    1    1
+    99.0          1    1    1
     dtype: float64, shape: (100, 3)
 
     Initialize a TsdFrame with metadata:
@@ -1471,24 +1483,26 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
     >>> metadata = {"color": ["red", "blue", "green"], "depth": [1, 2, 3]}
     >>> tsdframe = nap.TsdFrame(t=t, d=d, columns=["A", "B", "C"], metadata=metadata)
     >>> tsdframe
-    Time (s)    A         B         C
-    ----------  --------  --------  --------
-    0.0         1.0       1.0       1.0
-    1.0         1.0       1.0       1.0
-    2.0         1.0       1.0       1.0
-    3.0         1.0       1.0       1.0
-    4.0         1.0       1.0       1.0
-    ...         ...       ...       ...
-    95.0        1.0       1.0       1.0
-    96.0        1.0       1.0       1.0
-    97.0        1.0       1.0       1.0
-    98.0        1.0       1.0       1.0
-    99.0        1.0       1.0       1.0
+    Time (s)    A    B     C
+    ----------  ---  ----  -----
+    0.0         1.0  1.0   1.0
+    1.0         1.0  1.0   1.0
+    2.0         1.0  1.0   1.0
+    3.0         1.0  1.0   1.0
+    4.0         1.0  1.0   1.0
+    5.0         1.0  1.0   1.0
+    6.0         1.0  1.0   1.0
+    ...
+    93.0        1.0  1.0   1.0
+    94.0        1.0  1.0   1.0
+    95.0        1.0  1.0   1.0
+    96.0        1.0  1.0   1.0
+    97.0        1.0  1.0   1.0
+    98.0        1.0  1.0   1.0
+    99.0        1.0  1.0   1.0
     Metadata
-    --------    --------  --------  --------
-    color       red       blue      green
-    depth       1         2         3
-    <BLANKLINE>
+    color       red  blue  green
+    depth       1    2     3
     dtype: float64, shape: (100, 3)
 
     Initialize a TsdFrame with a pandas DataFrame:
@@ -1502,24 +1516,26 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
     ... )
     >>> tsdframe = nap.TsdFrame(data, metadata=metadata)
     >>> tsdframe
-    Time (s)    A         B         C
-    ----------  --------  --------  --------
-    0.0         1.0       1.0       1.0
-    1.0         1.0       1.0       1.0
-    2.0         1.0       1.0       1.0
-    3.0         1.0       1.0       1.0
-    4.0         1.0       1.0       1.0
-    ...         ...       ...       ...
-    95.0        1.0       1.0       1.0
-    96.0        1.0       1.0       1.0
-    97.0        1.0       1.0       1.0
-    98.0        1.0       1.0       1.0
-    99.0        1.0       1.0       1.0
+    Time (s)    A    B     C
+    ----------  ---  ----  -----
+    0.0         1.0  1.0   1.0
+    1.0         1.0  1.0   1.0
+    2.0         1.0  1.0   1.0
+    3.0         1.0  1.0   1.0
+    4.0         1.0  1.0   1.0
+    5.0         1.0  1.0   1.0
+    6.0         1.0  1.0   1.0
+    ...
+    93.0        1.0  1.0   1.0
+    94.0        1.0  1.0   1.0
+    95.0        1.0  1.0   1.0
+    96.0        1.0  1.0   1.0
+    97.0        1.0  1.0   1.0
+    98.0        1.0  1.0   1.0
+    99.0        1.0  1.0   1.0
     Metadata
-    --------    --------  --------  --------
-    color       red       blue      green
-    depth       1         2         3
-    <BLANKLINE>
+    color       red  blue  green
+    depth       1    2     3
     dtype: float64, shape: (100, 3)
     """
 
@@ -1920,21 +1936,23 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
         >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randn(len(t), 4), time_units='s')
         >>> tsdframe
-        Time (s)    0         1         2         3
-        ----------  --------  --------  --------  --------
-        1.0         -2.17833  -1.0439   0.17269   0.3242
-        13.0        0.74586   -1.83658  0.56446   0.0255
-        20.0        0.47319   0.65919   2.34075   1.07099
-        21.0        0.09642   0.4191    -0.95303  -1.04787
-        34.0        -1.87568  -1.36678  0.63631   -0.90672
-        58.0        0.47604   1.30366   0.21159   0.59704
-        ...         ...       ...       ...       ...
-        897.0       -0.98723  -0.49116  -1.20912  1.58914
-        931.0       -0.75691  -0.87508  -1.32561  -0.77121
-        942.0       -0.49489  -0.04948  -0.64532  -1.60061
-        955.0       -1.51457  0.67966   -0.12279  0.64889
-        957.0       0.78028   0.15108   -1.23173  0.18958
-        975.0       1.3996    -0.44743  0.34062   -0.01378
+        Time (s)             0           1          2           3
+        ----------  ----------  ----------  ---------  ----------
+        1.0         -2.17833    -1.0439      0.172694   0.324199
+        13.0         0.74586    -1.83658     0.564464   0.0255007
+        20.0         0.473193    0.659191    2.34075    1.07099
+        21.0         0.0964165   0.419102   -0.953028  -1.04787
+        34.0        -1.87568    -1.36678     0.636305  -0.906721
+        58.0         0.476043    1.30366     0.211587   0.597045
+        71.0        -0.896335   -0.111988    1.46894   -1.1239
+        ...
+        875.0        0.366909    0.209497   -0.875562  -0.234848
+        897.0       -0.987229   -0.491164   -1.20912    1.58914
+        931.0       -0.756906   -0.875079   -1.32561   -0.771205
+        942.0       -0.494893   -0.0494796  -0.645322  -1.60061
+        955.0       -1.51457     0.67966    -0.122789   0.648893
+        957.0        0.780275    0.15108    -1.23173    0.189585
+        975.0        1.3996     -0.447428    0.340615  -0.013778
         dtype: float64, shape: (94, 4)
 
         tsdframe_before is a timestamp table with data.
@@ -1985,21 +2003,23 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
         >>> tsdframe_before = nap.TsdFrame(t=t, d=np.random.randn(len(t), 4), time_units='s')
         >>> tsdframe_before
-        Time (s)    0         1         2         3
-        ----------  --------  --------  --------  --------
-        1.0         -2.17833  -1.0439   0.17269   0.3242
-        13.0        0.74586   -1.83658  0.56446   0.0255
-        20.0        0.47319   0.65919   2.34075   1.07099
-        21.0        0.09642   0.4191    -0.95303  -1.04787
-        34.0        -1.87568  -1.36678  0.63631   -0.90672
-        58.0        0.47604   1.30366   0.21159   0.59704
-        ...         ...       ...       ...       ...
-        897.0       -0.98723  -0.49116  -1.20912  1.58914
-        931.0       -0.75691  -0.87508  -1.32561  -0.77121
-        942.0       -0.49489  -0.04948  -0.64532  -1.60061
-        955.0       -1.51457  0.67966   -0.12279  0.64889
-        957.0       0.78028   0.15108   -1.23173  0.18958
-        975.0       1.3996    -0.44743  0.34062   -0.01378
+        Time (s)             0           1          2           3
+        ----------  ----------  ----------  ---------  ----------
+        1.0         -2.17833    -1.0439      0.172694   0.324199
+        13.0         0.74586    -1.83658     0.564464   0.0255007
+        20.0         0.473193    0.659191    2.34075    1.07099
+        21.0         0.0964165   0.419102   -0.953028  -1.04787
+        34.0        -1.87568    -1.36678     0.636305  -0.906721
+        58.0         0.476043    1.30366     0.211587   0.597045
+        71.0        -0.896335   -0.111988    1.46894   -1.1239
+        ...
+        875.0        0.366909    0.209497   -0.875562  -0.234848
+        897.0       -0.987229   -0.491164   -1.20912    1.58914
+        931.0       -0.756906   -0.875079   -1.32561   -0.771205
+        942.0       -0.494893   -0.0494796  -0.645322  -1.60061
+        955.0       -1.51457     0.67966    -0.122789   0.648893
+        957.0        0.780275    0.15108    -1.23173    0.189585
+        975.0        1.3996     -0.447428    0.340615  -0.013778
         dtype: float64, shape: (94, 4)
 
         tsdframe_before is a timestamp table with data.
@@ -2014,21 +2034,23 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         >>> tsdframe_after = tsdframe_before.restrict(ep)
         >>> tsdframe_after
-        Time (s)    0         1         2         3
-        ----------  --------  --------  --------  --------
-        1.0         -2.17833  -1.0439   0.17269   0.3242
-        13.0        0.74586   -1.83658  0.56446   0.0255
-        20.0        0.47319   0.65919   2.34075   1.07099
-        21.0        0.09642   0.4191    -0.95303  -1.04787
-        34.0        -1.87568  -1.36678  0.63631   -0.90672
-        58.0        0.47604   1.30366   0.21159   0.59704
-        ...         ...       ...       ...       ...
-        466.0       -0.16531  -0.68718  0.06835   -0.40941
-        474.0       1.88955   -0.6758   -0.91341  -0.45503
-        475.0       -0.41276  0.59564   -1.99154  0.42603
-        476.0       -0.54129  0.77682   -0.04764  0.51869
-        484.0       -0.3914   0.43802   1.66377   -0.73924
-        491.0       -0.10719  -0.48622  1.59298   -0.43394
+        Time (s)             0          1           2           3
+        ----------  ----------  ---------  ----------  ----------
+        1.0         -2.17833    -1.0439     0.172694    0.324199
+        13.0         0.74586    -1.83658    0.564464    0.0255007
+        20.0         0.473193    0.659191   2.34075     1.07099
+        21.0         0.0964165   0.419102  -0.953028   -1.04787
+        34.0        -1.87568    -1.36678    0.636305   -0.906721
+        58.0         0.476043    1.30366    0.211587    0.597045
+        71.0        -0.896335   -0.111988   1.46894    -1.1239
+        ...
+        459.0        0.656797   -1.4359    -1.18327     0.494996
+        466.0       -0.16531    -0.687175   0.0683513  -0.409409
+        474.0        1.88955    -0.675805  -0.913413   -0.455033
+        475.0       -0.412762    0.595644  -1.99154     0.426026
+        476.0       -0.541285    0.776823  -0.0476437   0.518694
+        484.0       -0.391402    0.438023   1.66377    -0.739236
+        491.0       -0.107194   -0.486217   1.59298    -0.433942
         dtype: float64, shape: (53, 4)
 
         tsdframe_after is a timestamp table restricted to the epochs.
@@ -2047,22 +2069,22 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randn(len(t), 4))
         >>> tsdframe.in_interval(ep)
         Time (s)
-        ----------  --
-        0.0          1
-        1.0          1
-        2.0          1
-        3.0          1
-        4.0          1
-        5.0          1
-        6.0          1
+        ----------  -----
+        0.0         True
+        1.0         True
+        2.0         True
+        3.0         True
+        4.0         True
+        5.0         True
+        6.0         True
         ...
-        93.0         0
-        94.0         0
-        95.0         0
-        96.0         0
-        97.0         0
-        98.0         0
-        99.0         0
+        93.0        False
+        94.0        False
+        95.0        False
+        96.0        False
+        97.0        False
+        98.0        False
+        99.0        False
         dtype: bool, shape: (100,)
         """
         return _Base.in_interval(self, iset)
@@ -2079,21 +2101,23 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
         >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randn(len(t), 3), time_units='s')
         >>> tsdframe
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        1.0         -2.17833  -1.0439   0.17269
-        13.0        0.3242    0.74586   -1.83658
-        20.0        0.56446   0.0255    0.47319
-        21.0        0.65919   2.34075   1.07099
-        34.0        0.09642   0.4191    -0.95303
-        58.0        -1.04787  -1.87568  -1.36678
-        ...         ...       ...       ...
-        897.0       1.95128   -0.04009  0.52944
-        931.0       -0.18389  -0.09008  -0.50588
-        942.0       0.05074   0.4946    1.67831
-        955.0       -1.87447  1.61082   0.52796
-        957.0       -0.36776  -0.54772  1.04368
-        975.0       0.22898   -1.53407  0.36307
+        Time (s)             0           1          2
+        ----------  ----------  ----------  ---------
+        1.0         -2.17833    -1.0439      0.172694
+        13.0         0.324199    0.74586    -1.83658
+        20.0         0.564464    0.0255007   0.473193
+        21.0         0.659191    2.34075     1.07099
+        34.0         0.0964165   0.419102   -0.953028
+        58.0        -1.04787    -1.87568    -1.36678
+        71.0         0.636305   -0.906721    0.476043
+        ...
+        875.0       -0.9812     -1.23823    -0.824651
+        897.0        1.95128    -0.0400851   0.529436
+        931.0       -0.183892   -0.0900786  -0.50588
+        942.0        0.050744    0.4946      1.67831
+        955.0       -1.87447     1.61082     0.52796
+        957.0       -0.367763   -0.547723    1.04368
+        975.0        0.228979   -1.53407     0.36307
         dtype: float64, shape: (94, 3)
 
         tsdframe is a timestamp table with values.
@@ -2241,10 +2265,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> tsdframe = nap.TsdFrame(t=times, d=np.stack([np.sin(times), np.cos(times)], axis=1))
         >>> peaks = tsdframe.find_peaks()
         >>> peaks
-          Index     rate
-        -------  -------
-              0  0.20202
-              1  0.10101
+          Index     rate    columns
+        -------  -------  ---------
+              0  0.20202          0
+              1  0.10101          1
         >>> peaks[0]
         Time (s)
         ----------  --------
@@ -2256,10 +2280,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         >>> peaks = tsdframe.find_peaks(width=21)
         >>> peaks
-          Index     rate
-        -------  -------
-              0  0.10101
-              1  0.10101
+          Index     rate    columns
+        -------  -------  ---------
+              0  0.10101          0
+              1  0.10101          1
         >>> peaks[0]
         Time (s)
         ----------  --------
@@ -2270,10 +2294,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         >>> peaks = tsdframe.find_peaks(return_prop=True, width=21)
         >>> peaks
-          Index     rate
-        -------  -------
-              0  0.10101
-              1  0.10101
+          Index     rate    columns
+        -------  -------  ---------
+              0  0.10101          0
+              1  0.10101          1
         >>> peaks[0]
         Time (s)      peak_value    prominences    left_bases    right_bases    widths  ...
         ----------  ------------  -------------  ------------  -------------  --------  -----
@@ -2328,16 +2352,17 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsdframe = nap.TsdFrame(t=np.array([0., 1.]), d = np.array([[2, 3],[4,5]]), columns=['a', 'b'])
-        >>> tsdframe.save("my_path/my_tsdframe.npz")
+        >>> tsdframe.save("my_tsdframe.npz")
 
         To load you file, you can use the `nap.load_file` function :
 
-        >>> tsdframe = nap.load_file("my_path/my_tsdframe.npz")
+        >>> tsdframe = nap.load_file("my_tsdframe.npz")
         >>> tsdframe
-                  a  b
-        Time (s)
-        0.0       2  3
-        1.0       4  5
+        Time (s)      a    b
+        ----------  ---  ---
+        0             2    3
+        1             4    5
+        dtype: int64, shape: (2, 2)
 
 
         Raises
@@ -2379,17 +2404,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> metadata = pd.DataFrame(index=tsdframe.columns, data=["red", "blue", "green"], columns=["color"])
         >>> tsdframe.set_info(metadata)
         >>> tsdframe
-        Time (s)    a         b         c
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    a    b     c
+        ----------  ---  ----  -----
+        0.0         1.0  1.0   1.0
+        1.0         1.0  1.0   1.0
+        2.0         1.0  1.0   1.0
+        3.0         1.0  1.0   1.0
+        4.0         1.0  1.0   1.0
         Metadata
-        --------    --------  --------  --------
-        color       red       blue      green
-        <BLANKLINE>
+        color       red  blue  green
         dtype: float64, shape: (5, 3)
 
         To add metadata with a dictionary:
@@ -2397,18 +2420,16 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> metadata = {"xpos": [10, 20, 30]}
         >>> tsdframe.set_info(metadata)
         >>> tsdframe
-        Time (s)    a         b         c
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    a    b     c
+        ----------  ---  ----  -----
+        0.0         1.0  1.0   1.0
+        1.0         1.0  1.0   1.0
+        2.0         1.0  1.0   1.0
+        3.0         1.0  1.0   1.0
+        4.0         1.0  1.0   1.0
         Metadata
-        --------    --------  --------  --------
-        color       red       blue      green
-        xpos        10        20        30
-        <BLANKLINE>
+        color       red  blue  green
+        xpos        10   20    30
         dtype: float64, shape: (5, 3)
 
         To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
@@ -2416,81 +2437,68 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> ypos = pd.Series(index=tsdframe.columns, data = [10, 10, 10])
         >>> tsdframe.set_info(ypos=ypos)
         >>> tsdframe
-        Time (s)    a         b         c
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    a    b     c
+        ----------  ---  ----  -----
+        0.0         1.0  1.0   1.0
+        1.0         1.0  1.0   1.0
+        2.0         1.0  1.0   1.0
+        3.0         1.0  1.0   1.0
+        4.0         1.0  1.0   1.0
         Metadata
-        --------    --------  --------  --------
-        color       red       blue      green
-        xpos        10        20        30
-        ypos        10        10        10
-        <BLANKLINE>
+        color       red  blue  green
+        xpos        10   20    30
+        ...         ...  ...   ...
         dtype: float64, shape: (5, 3)
 
         To add metadata as an attribute:
 
         >>> tsdframe.label = ["a", "b", "c"]
         >>> tsdframe
-        Time (s)    a         b         c
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    a    b     c
+        ----------  ---  ----  -----
+        0.0         1.0  1.0   1.0
+        1.0         1.0  1.0   1.0
+        2.0         1.0  1.0   1.0
+        3.0         1.0  1.0   1.0
+        4.0         1.0  1.0   1.0
         Metadata
-        --------    --------  --------  --------
-        color       red       blue      green
-        xpos        10        20        30
-        ypos        10        10        10
-        label       a         b         c
-        <BLANKLINE>
+        color       red  blue  green
+        xpos        10   20    30
+        ...         ...  ...   ...
         dtype: float64, shape: (5, 3)
 
         To add metadata as a key:
 
         >>> tsdframe["region"] = ["M1", "M1", "M2"]
         >>> tsdframe
-        Time (s)    a         b         c
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    a    b     c
+        ----------  ---  ----  -----
+        0.0         1.0  1.0   1.0
+        1.0         1.0  1.0   1.0
+        2.0         1.0  1.0   1.0
+        3.0         1.0  1.0   1.0
+        4.0         1.0  1.0   1.0
         Metadata
-        --------    --------  --------  --------
-        color       red       blue      green
-        xpos        10        20        30
-        ypos        10        10        10
-        label       a         b         c
-        region      M1        M1        M2
-        <BLANKLINE>
+        color       red  blue  green
+        xpos        10   20    30
+        ...         ...  ...   ...
         dtype: float64, shape: (5, 3)
 
         Metadata can be overwritten:
 
         >>> tsdframe.set_info(label=["x", "y", "z"])
         >>> tsdframe
-        Time (s)    a         b         c
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    a    b     c
+        ----------  ---  ----  -----
+        0.0         1.0  1.0   1.0
+        1.0         1.0  1.0   1.0
+        2.0         1.0  1.0   1.0
+        3.0         1.0  1.0   1.0
+        4.0         1.0  1.0   1.0
         Metadata
-        --------    --------  --------  --------
-        color       red       blue      green
-        xpos        10        20        30
-        ypos        10        10        10
-        label       x         y         z
-        region      M1        M1        M2
-        <BLANKLINE>
+        color       red  blue  green
+        xpos        10   20    30
+        ...         ...  ...   ...
         dtype: float64, shape: (5, 3)
         """
         _MetadataMixin.set_info(self, metadata, **kwargs)
@@ -2513,7 +2521,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         3.0         1.0  1.0  1.0
         4.0         1.0  1.0  1.0
         Metadata
-        ----------  ---  ---  ---
         l1          1    2    3
         l2          x    x    y
         dtype: float64, shape: (5, 3)
@@ -2521,33 +2528,42 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         To access a single metadata row (transposed to column):
 
         >>> tsdframe.get_info("l1")
-        array([1, 2, 3])
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
 
         To access multiple metadata rows (transposed to columns):
 
         >>> tsdframe.get_info(["l1", "l2"])
-             l1    l2
-        0    1     x
-        1    2     x
-        2    3     y
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
 
         To access metadata as an attribute:
 
         >>> tsdframe.l1
-        array([1, 2, 3])
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
 
         To access metadata as a key:
 
         >>> tsdframe["l1"]
-        array([1, 2, 3])
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
 
         Multiple metadata columns can be accessed as keys:
 
         >>> tsdframe[["l1", "l2"]]
-             l1    l2
-        0    1     x
-        1    2     x
-        2    3     y
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
         """
         return _MetadataMixin.get_info(self, key)
 
@@ -2569,10 +2585,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         3.0         1.0  1.0  1.0
         4.0         1.0  1.0  1.0
         Metadata
-        ----------  ---  ---  ---
         l1          1    2    3
         l2          x    x    y
-        l3          4    5    6
+        ...         ...  ...  ...
         dtype: float64, shape: (5, 3)
 
         To drop a single metadata row:
@@ -2587,7 +2602,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         3.0         1.0  1.0  1.0
         4.0         1.0  1.0  1.0
         Metadata
-        ----------  ---  ---  ---
         l2          x    x    y
         l3          4    5    6
         dtype: float64, shape: (5, 3)
@@ -2596,13 +2610,13 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         >>> tsdframe.drop_info(["l2", "l3"])
         >>> tsdframe
-          Time (s)    0    1    2
+        Time (s)      0    1    2
         ----------  ---  ---  ---
-                 0    1    1    1
-                 1    1    1    1
-                 2    1    1    1
-                 3    1    1    1
-                 4    1    1    1
+        0             1    1    1
+        1             1    1    1
+        2             1    1    1
+        3             1    1    1
+        4             1    1    1
         dtype: float64, shape: (5, 3)
         """
         return _MetadataMixin.drop_info(self, key)
@@ -2625,10 +2639,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         3.0         1.0  1.0  1.0
         4.0         1.0  1.0  1.0
         Metadata
-        ----------  ---  ---  ---
         l1          1    2    3
         l2          x    x    y
-        l3          4    5    6
+        ...         ...  ...  ...
         dtype: float64, shape: (5, 3)
 
         To restrict to multiple metadata rows:
@@ -2643,7 +2656,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         3.0         1.0  1.0  1.0
         4.0         1.0  1.0  1.0
         Metadata
-        ----------  ---  ---  ---
         l2          x    x    y
         l3          4    5    6
         dtype: float64, shape: (5, 3)
@@ -2652,15 +2664,14 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         >>> tsdframe.restrict_info("l2")
         >>> tsdframe
-          Time (s)    0    1    2
+        Time (s)    0    1    2
         ----------  ---  ---  ---
-                 0    1    1    1
-                 1    1    1    1
-                 2    1    1    1
-                 3    1    1    1
-                 4    1    1    1
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
         Metadata
-        ----------  ---  ---  ---
         l2          x    x    y
         dtype: float64, shape: (5, 3)
         """
@@ -2677,63 +2688,57 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
         >>> print(tsdframe)
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
         Metadata
-        --------    --------  --------  --------
-        l1          1         2         2
-        l2          x         x         y
-        <BLANKLINE>
+        l1          1    2    2
+        l2          x    x    y
         dtype: float64, shape: (5, 3)
 
         Grouping by a single row:
 
         >>> tsdframe.groupby("l2")
-        {'x': [0, 1], 'y': [2]}
+        {'x': Index([0, 1], dtype='int64'), 'y': Index([2], dtype='int64')}
 
         Grouping by multiple rows:
 
         >>> tsdframe.groupby(["l1","l2"])
-        {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
+        {(1, 'x'): Index([0], dtype='int64'), (2, 'x'): Index([1], dtype='int64'), (2, 'y'): Index([2], dtype='int64')}
 
         Filtering to a specific group using the output dictionary:
 
         >>> groups = tsdframe.groupby("l2")
         >>> tsdframe[:,groups["x"]]
-        Time (s)    0         1
-        ----------  --------  --------
-        0.0         1.0       1.0
-        1.0         1.0       1.0
-        2.0         1.0       1.0
-        3.0         1.0       1.0
-        4.0         1.0       1.0
+        Time (s)    0    1
+        ----------  ---  ---
+        0.0         1.0  1.0
+        1.0         1.0  1.0
+        2.0         1.0  1.0
+        3.0         1.0  1.0
+        4.0         1.0  1.0
         Metadata
-        --------    --------  --------
-        l1          1         2
-        l2          x         x
-        <BLANKLINE>
+        l1          1    2
+        l2          x    x
         dtype: float64, shape: (5, 2)
 
         Filtering to a specific group using the get_group argument:
 
         >>> tsdframe.groupby("l2", get_group="x")
-        Time (s)    0         1
-        ----------  --------  --------
-        0.0         1.0       1.0
-        1.0         1.0       1.0
-        2.0         1.0       1.0
-        3.0         1.0       1.0
-        4.0         1.0       1.0
+        Time (s)    0    1
+        ----------  ---  ---
+        0.0         1.0  1.0
+        1.0         1.0  1.0
+        2.0         1.0  1.0
+        3.0         1.0  1.0
+        4.0         1.0  1.0
         Metadata
-        --------    --------  --------
-        l1          1         2
-        l2          x         x
-        <BLANKLINE>
+        l1          1    2
+        l2          x    x
         dtype: float64, shape: (5, 2)
         """
         return _MetadataMixin.groupby(self, by, get_group)
@@ -2748,34 +2753,32 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
         >>> print(tsdframe)
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
         Metadata
-        --------    --------  --------  --------
-        l1          1         2         2
-        l2          x         x         y
-        <BLANKLINE>
+        l1          1    2    2
+        l2          x    x    y
         dtype: float64, shape: (5, 3)
 
         Apply a numpy function:
 
         >>> tsdframe.groupby_apply("l1", np.sum)
-        {1: 5.0, 2: 10.0}
+        {1: np.float64(5.0), 2: np.float64(10.0)}
 
         Apply a custom function:
 
         >>> tsdframe.groupby_apply("l1", lambda x: x.shape)
-        {1: (5, 1), 2: (5, 2)}
+        {1: (5,), 2: (5, 2)}
 
         Apply a function with additional arguments:
 
         >>> tsdframe.groupby_apply("l1", np.sum, axis=0)
-        {1: array([5.]), 2: array([5., 5.])}
+        {1: np.float64(5.0), 2: array([5., 5.])}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
 
@@ -3034,8 +3037,9 @@ class Tsd(_BaseTsd):
 
         >>> tsd = nap.Tsd(t=np.arange(100), d=np.arange(100), time_units='s')
         >>> tsd.threshold(50).time_support
-        >>>    start   end
-        >>> 0   50.5  99.0
+          index    start    end
+              0     50.5     99
+        shape: (1, 2), time unit: sec.
 
         """
         if method not in ["above", "below", "aboveequal", "belowequal"]:
@@ -3220,22 +3224,22 @@ class Tsd(_BaseTsd):
         >>> tsd = nap.Tsd(t=t, d=np.random.randn(len(t)))
         >>> tsd.in_interval(ep)
         Time (s)
-        ----------  --
-        0.0          1
-        1.0          1
-        2.0          1
-        3.0          1
-        4.0          1
-        5.0          1
-        6.0          1
+        ----------  -----
+        0.0         True
+        1.0         True
+        2.0         True
+        3.0         True
+        4.0         True
+        5.0         True
+        6.0         True
         ...
-        93.0         0
-        94.0         0
-        95.0         0
-        96.0         0
-        97.0         0
-        98.0         0
-        99.0         0
+        93.0        False
+        94.0        False
+        95.0        False
+        96.0        False
+        97.0        False
+        98.0        False
+        99.0        False
         dtype: bool, shape: (100,)
         """
         return _Base.in_interval(self, iset)
@@ -3362,29 +3366,26 @@ class Tsd(_BaseTsd):
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsd = nap.Tsd(t = np.array([0, 1, 2, 3]), d = np.array([0, 2, 0, 1]))
-        Time (s)
-        0.0    0
-        1.0    2
-        2.0    0
-        3.0    1
-        dtype: int64
 
-        >>> tsd.to_tsgroup()
-        Index    rate
-        -------  ------
-            0    0.67
-            1    0.33
-            2    0.33
+
+        >>> tsgroup = tsd.to_tsgroup()
+        >>> tsgroup
+          Index     rate
+        -------  -------
+              0  0.66667
+              1  0.33333
+              2  0.33333
 
         The reverse operation can be done with the TsGroup.to_tsd function :
 
         >>> tsgroup.to_tsd()
         Time (s)
-        0.0    0.0
-        1.0    2.0
-        2.0    0.0
-        3.0    1.0
-        dtype: float64
+        ----------  --
+        0            0
+        1            2
+        2            0
+        3            1
+        dtype: float64, shape: (4,)
 
         Returns
         -------
@@ -3544,16 +3545,17 @@ class Tsd(_BaseTsd):
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsd = nap.Tsd(t=np.array([0., 1.]), d = np.array([2, 3]))
-        >>> tsd.save("my_path/my_tsd.npz")
+        >>> tsd.save("my_tsd.npz")
 
         To load you file, you can use the `nap.load_file` function :
 
-        >>> tsd = nap.load_file("my_path/my_tsd.npz")
+        >>> tsd = nap.load_file("my_tsd.npz")
         >>> tsd
         Time (s)
-        0.0    2
-        1.0    3
-        dtype: int64
+        ----------  --
+        0            2
+        1            3
+        dtype: int64, shape: (2,)
 
         Raises
         ------
@@ -3733,16 +3735,17 @@ class Ts(_Base):
         >>> import pynapple as nap
         >>> import numpy as np
         >>> ts = nap.Ts(t=np.array([0., 1., 1.5]))
-        >>> ts.save("my_path/my_ts.npz")
+        >>> ts.save("my_ts.npz")
 
         To load you file, you can use the `nap.load_file` function :
 
-        >>> ts = nap.load_file("my_path/my_ts.npz")
+        >>> ts = nap.load_file("my_ts.npz")
         >>> ts
         Time (s)
         0.0
         1.0
         1.5
+        shape: 3
 
         Raises
         ------
@@ -3994,22 +3997,22 @@ class Ts(_Base):
         >>> ts = nap.Ts(t)
         >>> ts.in_interval(ep)
         Time (s)
-        ----------  --
-        0.0          1
-        1.0          1
-        2.0          1
-        3.0          1
-        4.0          1
-        5.0          1
-        6.0          1
+        ----------  -----
+        0.0         True
+        1.0         True
+        2.0         True
+        3.0         True
+        4.0         True
+        5.0         True
+        6.0         True
         ...
-        93.0         0
-        94.0         0
-        95.0         0
-        96.0         0
-        97.0         0
-        98.0         0
-        99.0         0
+        93.0        False
+        94.0        False
+        95.0        False
+        96.0        False
+        97.0        False
+        98.0        False
+        99.0        False
         dtype: bool, shape: (100,)
         """
         return _Base.in_interval(self, iset)
