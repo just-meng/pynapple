@@ -615,10 +615,9 @@ class TsGroup(UserDict, _MetadataMixin):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
+        >>> tmp = {0: nap.Ts(t=np.arange(0, 200), time_units='s'),
+        ...        1: nap.Ts(t=np.arange(0, 200, 0.5), time_units='s'),
+        ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
         >>> tsgroup = nap.TsGroup(tmp)
         >>> ep = nap.IntervalSet(start=0, end=100, time_units='s')
         >>> newtsgroup = tsgroup.restrict(ep)
@@ -626,11 +625,13 @@ class TsGroup(UserDict, _MetadataMixin):
         All objects within the TsGroup automatically inherit the epochs defined by ep.
 
         >>> newtsgroup.time_support
-           start    end
-        0    0.0  100.0
+          index    start    end
+              0        0    100
+        shape: (1, 2), time unit: sec.
         >>> newtsgroup[0].time_support
-           start    end
-        0    0.0  100.0
+          index    start    end
+              0        0    100
+        shape: (1, 2), time unit: sec.
         """
         newgr = {}
         for k in self.index:
@@ -665,10 +666,9 @@ class TsGroup(UserDict, _MetadataMixin):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
+        >>> tmp = {0: nap.Ts(t=np.arange(0, 200), time_units='s'),
+        ...        1: nap.Ts(t=np.arange(0, 200, 0.5), time_units='s'),
+        ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
         >>> tsgroup = nap.TsGroup(tmp)
         >>> ep = nap.IntervalSet(start=0, end=100, time_units='s')
 
@@ -742,28 +742,31 @@ class TsGroup(UserDict, _MetadataMixin):
 
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
+        >>> tmp = {0: nap.Ts(t=np.arange(0, 200), time_units='s'),
+        ...        1: nap.Ts(t=np.arange(0, 200, 0.5), time_units='s'),
+        ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
         >>> tsgroup = nap.TsGroup(tmp)
         >>> ep = nap.IntervalSet(start=0, end=100, time_units='s')
-        >>> bincount = tsgroup.count(0.1, ep)
+        >>> bincount = tsgroup.count(1, ep)
         >>> bincount
-                  0  1  2
-        Time (s)
-        0.05      0  0  0
-        0.15      0  0  0
-        0.25      0  0  1
-        0.35      0  0  0
-        0.45      0  0  0
-        ...      .. .. ..
-        99.55     0  1  1
-        99.65     0  0  0
-        99.75     0  0  1
-        99.85     0  0  0
-        99.95     1  1  1
-        [1000 rows x 3 columns]
+        Time (s)      0    1    2
+        ----------  ---  ---  ---
+        0.5           1    2    4
+        1.5           1    2    4
+        2.5           1    2    4
+        3.5           1    2    4
+        4.5           1    2    4
+        5.5           1    2    4
+        6.5           1    2    4
+        ...
+        93.5          1    2    4
+        94.5          1    2    4
+        95.5          1    2    4
+        96.5          1    2    4
+        97.5          1    2    4
+        98.5          1    2    4
+        99.5          1    2    4
+        dtype: int64, shape: (100, 3)
 
         """
         if bin_size is not None:
@@ -849,51 +852,53 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsgroup = nap.TsGroup({0:nap.Ts(t=np.array([0, 1])), 5:nap.Ts(t=np.array([2, 3]))})
-        Index    rate
-        -------  ------
-        0       1
-        5       1
+
 
         By default, the values of the Tsd is the index of the timestamp in the TsGroup:
 
         >>> tsgroup.to_tsd()
         Time (s)
-        0.0    0.0
-        1.0    0.0
-        2.0    5.0
-        3.0    5.0
-        dtype: float64
+        ----------  --
+        0            0
+        1            0
+        2            5
+        3            5
+        dtype: float64, shape: (4,)
 
         Values can be inherited from the metadata of the TsGroup by giving the key of the corresponding columns.
 
         >>> tsgroup.set_info( phase=np.array([np.pi, 2*np.pi]) ) # assigning a phase to my 2 elements of the TsGroup
         >>> tsgroup.to_tsd("phase")
         Time (s)
-        0.0    3.141593
-        1.0    3.141593
-        2.0    6.283185
-        3.0    6.283185
-        dtype: float64
+        ----------  -------
+        0           3.14159
+        1           3.14159
+        2           6.28319
+        3           6.28319
+        dtype: float64, shape: (4,)
 
         Values can also be passed directly to the function from a list, numpy.ndarray or pandas.Series of values as long as the length matches :
 
         >>> tsgroup.to_tsd([-1, 1])
         Time (s)
-        0.0   -1.0
-        1.0   -1.0
-        2.0    1.0
-        3.0    1.0
-        dtype: float64
+        ----------  --
+        0           -1
+        1           -1
+        2            1
+        3            1
+        dtype: float64, shape: (4,)
 
         The reverse operation can be done with the Tsd.to_tsgroup function :
 
+        >>> my_tsd = tsgroup.to_tsd()
         >>> my_tsd
         Time (s)
-        0.0    0.0
-        1.0    0.0
-        2.0    5.0
-        3.0    5.0
-        dtype: float64
+        ----------  --
+        0            0
+        1            0
+        2            5
+        3            5
+        dtype: float64, shape: (4,)
         >>> my_tsd.to_tsgroup()
           Index    rate
         -------  ------
@@ -1172,24 +1177,19 @@ class TsGroup(UserDict, _MetadataMixin):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
+        >>> tmp = {0: nap.Ts(t=np.arange(0, 200), time_units='s'),
+        ...        1: nap.Ts(t=np.arange(0, 200, 0.5), time_units='s'),
+        ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
         >>> tsgroup = nap.TsGroup(tmp)
-          Index    Freq. (Hz)
-        -------  ------------
-              0             1
-              1             2
-              2             4
 
-        This exemple shows how to get a new TsGroup with all elements for which the metainfo frequency is above 1.
+        This exemple shows how to get a new TsGroup with all elements for which the rate is above 1.
 
-        >>> newtsgroup = tsgroup.getby_threshold('freq', 1, op = '>')
-          Index    Freq. (Hz)
-        -------  ------------
-              1             2
-              2             4
+        >>> newtsgroup = tsgroup.getby_threshold('rate', 1, op='>')
+        >>> newtsgroup
+          Index     rate
+        -------  -------
+              1  1.33445
+              2  4.00334
 
         """
         if op == ">":
@@ -1228,27 +1228,22 @@ class TsGroup(UserDict, _MetadataMixin):
 
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
-        >>> tsgroup = nap.TsGroup(tmp, alpha = np.arange(3))
-          Index    Freq. (Hz)    alpha
-        -------  ------------  -------
-              0             1        0
-              1             2        1
-              2             4        2
+        >>> tmp = {0: nap.Ts(t=np.arange(0, 200), time_units='s'),
+        ...        1: nap.Ts(t=np.arange(0, 200, 0.5), time_units='s'),
+        ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
+        >>> tsgroup = nap.TsGroup(tmp, metadata={"alpha": np.arange(3)})
 
         This exemple shows how to bin the TsGroup according to one metainfo key.
 
         >>> newtsgroup, bincenter = tsgroup.getby_intervals('alpha', [0, 1, 2])
-        >>> newtsgroup
-        [  Index    Freq. (Hz)    alpha
-         -------  ------------  -------
-               0             1        0,
-           Index    Freq. (Hz)    alpha
-         -------  ------------  -------
-               1             2        1]
+        >>> newtsgroup[0]
+          Index     rate    alpha
+        -------  -------  -------
+              0  0.66722        0
+        >>> newtsgroup[1]
+          Index     rate    alpha
+        -------  -------  -------
+              1  1.33445        1
 
         By default, the function returns the center of the bins.
 
@@ -1284,28 +1279,23 @@ class TsGroup(UserDict, _MetadataMixin):
 
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
-        >>> tsgroup = nap.TsGroup(tmp, group = [0,1,1])
-          Index    Freq. (Hz)    group
-        -------  ------------  -------
-              0             1        0
-              1             2        1
-              2             4        1
+        >>> tmp = {0: nap.Ts(t=np.arange(0, 200), time_units='s'),
+        ...        1: nap.Ts(t=np.arange(0, 200, 0.5), time_units='s'),
+        ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
+        >>> tsgroup = nap.TsGroup(tmp, metadata={"group": [0, 1, 1]})
 
         This exemple shows how to group the TsGroup according to one metainfo key.
 
         >>> newtsgroup = tsgroup.getby_category('group')
-        >>> newtsgroup
-        {0:   Index    Freq. (Hz)    group
-         -------  ------------  -------
-               0             1        0,
-         1:   Index    Freq. (Hz)    group
-         -------  ------------  -------
-               1             2        1
-               2             4        1}
+        >>> newtsgroup[0]
+          Index     rate    group
+        -------  -------  -------
+              0  0.66722        0
+        >>> newtsgroup[1]
+          Index     rate    group
+        -------  -------  -------
+              1  1.33445        1
+              2  4.00334        1
 
         """
         groups = self.groupby(key)
@@ -1477,16 +1467,16 @@ class TsGroup(UserDict, _MetadataMixin):
 
         >>> tsgroup_12 = tsgroup1.merge(tsgroup2)
         >>> tsgroup_12
-        Index    rate
+          Index    rate
         -------  ------
-             0     1.5
-            10     1.5
+              0     1.5
+             10     1.5
 
         Set `reset_index=True` if indexes are overlapping:
 
         >>> tsgroup_13 = tsgroup1.merge(tsgroup3, reset_index=True)
         >>> tsgroup_13
-        Index    rate
+          Index    rate
         -------  ------
               0     1.5
               1     1.5
@@ -1495,15 +1485,14 @@ class TsGroup(UserDict, _MetadataMixin):
 
         >>> tsgroup_14 = tsgroup1.merge(tsgroup4, reset_time_support=True)
         >>> tsgroup_14
-        >>> tsgroup_14.time_support
-        Index    rate
+          Index    rate
         -------  ------
               0     0.3
              10     0.3
-
-                    start    end
-            0       -5      5
-            shape: (1, 2), time unit: sec.
+        >>> tsgroup_14.time_support
+          index    start    end
+              0       -5      5
+        shape: (1, 2), time unit: sec.
 
         See Also
         --------
@@ -1530,14 +1519,13 @@ class TsGroup(UserDict, _MetadataMixin):
         and assigning to each the corresponding index. Typically, a TsGroup like
         this :
 
-        >>> TsGroup({
+        TsGroup({
             0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
             1 : Tsd(t=[1, 5], d=[5, 6])})
 
         will be saved as npz with the following keys:
 
-
-        >>> {
+        {
             't' : [0, 1, 2, 4, 5],
             'd' : [1, 5, 2, 3, 5],
             'index' : [0, 1, 0, 0, 1],
@@ -1564,13 +1552,12 @@ class TsGroup(UserDict, _MetadataMixin):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tsgroup = nap.TsGroup({
-            0 : nap.Ts(t=np.array([0.0, 2.0, 4.0])),
-            6 : nap.Ts(t=np.array([1.0, 5.0]))
-            },
-            group = np.array([0, 1]),
-            location = np.array(['right foot', 'left foot'])
-            )
+        >>> tsgroup = nap.TsGroup(
+        ...     {0: nap.Ts(t=np.array([0.0, 2.0, 4.0])),
+        ...      6: nap.Ts(t=np.array([1.0, 5.0]))},
+        ...     metadata={"group": np.array([0, 1]),
+        ...               "location": np.array(['right foot', 'left foot'])}
+        ... )
         >>> tsgroup
           Index    rate    group  location
         -------  ------  -------  ----------
@@ -1746,9 +1733,9 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> tsgroup
           Index     rate  struct    coords
         -------  -------  --------  --------
-              0  0.66722  pfc       [0, 0]
-              1  1.33445  pfc       [0, 1]
-              2  4.00334  ca1       [1, 0]
+              0  0.66722  pfc       [0 0]
+              1  1.33445  pfc       [0 1]
+              2  4.00334  ca1       [1 0]
 
         To add metadata with a keyword argument (pd.Series, numpy.ndarray, list or tuple):
 
@@ -1757,9 +1744,9 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> tsgroup
           Index     rate  struct    coords      hd
         -------  -------  --------  --------  ----
-              0  0.66722  pfc       [0, 0]       0
-              1  1.33445  pfc       [0, 1]       1
-              2  4.00334  ca1       [1, 0]       1
+              0  0.66722  pfc       [0 0]        0
+              1  1.33445  pfc       [0 1]        1
+              2  4.00334  ca1       [1 0]        1
 
         To add metadata as an attribute:
 
@@ -1767,29 +1754,29 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> tsgroup
           Index     rate  struct    coords      hd  label
         -------  -------  --------  --------  ----  -------
-              0  0.66722  pfc       [0, 0]       0  a
-              1  1.33445  pfc       [0, 1]       1  b
-              2  4.00334  ca1       [1, 0]       1  c
+              0  0.66722  pfc       [0 0]        0  a
+              1  1.33445  pfc       [0 1]        1  b
+              2  4.00334  ca1       [1 0]        1  c
 
         To add metadata as a key:
 
         >>> tsgroup["type"] = ["multi", "multi", "single"]
         >>> tsgroup
-          Index     rate  struct    coords      hd  label    type
-        -------  -------  --------  --------  ----  -------  ------
-              0  0.66722  pfc       [0, 0]       0  a        multi
-              1  1.33445  pfc       [0, 1]       1  b        multi
-              2  4.00334  ca1       [1, 0]       1  c        single
+          Index     rate  struct    coords      hd  label    type    ...
+        -------  -------  --------  --------  ----  -------  ------  -----
+              0  0.66722  pfc       [0 0]        0  a        multi   ...
+              1  1.33445  pfc       [0 1]        1  b        multi   ...
+              2  4.00334  ca1       [1 0]        1  c        single  ...
 
         Metadata can be overwritten:
 
         >>> tsgroup.set_info(label=["x", "y", "z"])
         >>> tsgroup
-          Index     rate  struct    coords      hd  label    type
-        -------  -------  --------  --------  ----  -------  ------
-              0  0.66722  pfc       [0, 0]       0  x        multi
-              1  1.33445  pfc       [0, 1]       1  y        multi
-              2  4.00334  ca1       [1, 0]       1  z        single
+          Index     rate  struct    coords      hd  label    type    ...
+        -------  -------  --------  --------  ----  -------  ------  -----
+              0  0.66722  pfc       [0 0]        0  x        multi   ...
+              1  1.33445  pfc       [0 1]        1  y        multi   ...
+              2  4.00334  ca1       [1 0]        1  z        single  ...
 
         """
         _MetadataMixin.set_info(self, metadata, **kwargs)
@@ -1817,28 +1804,34 @@ class TsGroup(UserDict, _MetadataMixin):
         To access a single metadata column:
 
         >>> tsgroup.get_info("l1")
-        array([1, 2, 3])
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
 
         To access multiple metadata columns:
 
         >>> tsgroup.get_info(["l1", "l2"])
-             l1    l2
-        0    1     x
-        1    2     x
-        2    3     y
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
 
         To access metadata as a key:
 
         >>> tsgroup["l1"]
-        array([1, 2, 3])
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
 
         Multiple metadata columns can be accessed as keys:
 
         >>> tsgroup[["l1", "l2"]]
-             l1    l2
-        0    1     x
-        1    2     x
-        2    3     y
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
         """
         return _MetadataMixin.get_info(self, key)
 
@@ -1922,11 +1915,11 @@ class TsGroup(UserDict, _MetadataMixin):
 
         >>> tsgroup.drop_info("l2")
         >>> tsgroup
-          Index     rate  l2
+          Index     rate    l3
         -------  -------  ----
-              0  0.66722  x
-              1  1.33445  x
-              2  4.00334  y
+              0  0.66722     4
+              1  1.33445     5
+              2  4.00334     6
         """
         return _MetadataMixin.restrict_info(self, key)
 
@@ -1954,12 +1947,12 @@ class TsGroup(UserDict, _MetadataMixin):
         Grouping by a single column:
 
         >>> tsgroup.groupby("l2")
-        {'x': [0, 1], 'y': [2]}
+        {'x': array([0, 1]), 'y': array([2])}
 
         Grouping by multiple columns:
 
         >>> tsgroup.groupby(["l1","l2"])
-        {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
+        {(1, 'x'): array([0]), (2, 'x'): array([1]), (2, 'y'): array([2])}
 
         Filtering to a specific group using the output dictionary:
 
@@ -1967,16 +1960,16 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> tsgroup[groups["x"]]
           Index     rate    l1  l2
         -------  -------  ----  ----
-              1  1.00503     1  x
-              2  2.01005     2  x
+              0  1.00629     1  x
+              1  2.01258     2  x
 
         Filtering to a specific group using the get_group argument:
 
-        >>> ep.groupby("l2", get_group="x")
+        >>> tsgroup.groupby("l2", get_group="x")
           Index     rate    l1  l2
         -------  -------  ----  ----
-              1  1.00503     1  x
-              2  2.01005     2  x
+              0  1.00629     1  x
+              1  2.01258     2  x
         """
         return _MetadataMixin.groupby(self, by, get_group)
 
@@ -2021,14 +2014,18 @@ class TsGroup(UserDict, _MetadataMixin):
           * 0        (0) float64 16B 0.25 0.75
         Attributes:
             occupancy:  [ 9. 14.]
-            bin_edges:  [array([0. , 0.5, 1. ])], 'y': <xarray.DataArray (unit: 1, 0: 2)> Size: 16B
+            bin_edges:  [array([0. , 0.5, 1. ])]
+            fs:         1.0
+            rates:      [1.15 2.15], 'y': <xarray.DataArray (unit: 1, 0: 2)> Size: 16B
         array([[3.33333333, 3.78571429]])
         Coordinates:
           * unit     (unit) int64 8B 2
           * 0        (0) float64 16B 0.25 0.75
         Attributes:
             occupancy:  [ 9. 14.]
-            bin_edges:  [array([0. , 0.5, 1. ])]}
+            bin_edges:  [array([0. , 0.5, 1. ])]
+            fs:         1.0
+            rates:      [4.15]}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
 
@@ -2071,9 +2068,9 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> tsgroup
           Index     rate
         -------  -------
-              0  1.0101
-              1  2.0202
-              2  4.0404
+              0  1.00251
+              1  2.00501
+              2  4.01003
 
         Subsample to keep exactly 50% of the timestamps:
 

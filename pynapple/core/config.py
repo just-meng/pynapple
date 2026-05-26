@@ -18,8 +18,9 @@ nap.nap_config.set_backend("jax") # Default option is 'numba'.
 
 You can view the current backend with
 
+>>> import pynapple as nap
 >>> print(nap.nap_config.backend)
-'jax'
+numba
 
 ## Warnings configuration
 
@@ -29,8 +30,6 @@ pynapple gives warnings that can be helpful to debug. For example when passing t
 >>> import pynapple as nap
 >>> t = [0, 2, 1]
 >>> nap.Ts(t)
-UserWarning: timestamps are not sorted
-  warn("timestamps are not sorted", UserWarning)
 Time (s)
 0.0
 1.0

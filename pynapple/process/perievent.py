@@ -328,11 +328,11 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     >>> result[0]
     Time (s)
     -0.5
-    0.2
+    0.19999999999999996
     shape: 2
     >>> result[1]
     Time (s)
-    -0.9
+    -0.8999999999999999
     0.5
     shape: 2
 
@@ -358,7 +358,7 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     >>> result[0]  # window from -0.5 to +1.5 relative to first event
     Time (s)
     -0.5
-    0.2
+    0.19999999999999996
     1.1
     shape: 3
 

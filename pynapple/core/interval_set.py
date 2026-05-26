@@ -112,11 +112,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     >>> end = [5, 12, 33]
     >>> metadata = {"label": ["a", "b", "c"]}
     >>> ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
-      index    start    end     label
-          0        0      5     a
-          1       10     12     b
-          2       20     33     c
-    shape: (3, 2), time unit: sec.
+
 
     Initialize an IntervalSet with a pandas DataFrame:
 
@@ -124,10 +120,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     >>> df = pd.DataFrame(data={"start": [0, 10, 20], "end": [5, 12, 33], "label": ["a", "b", "c"]})
     >>> ep = nap.IntervalSet(df)
     >>> ep
-      index    start    end     label
-          0        0      5     a
-          1       10     12     b
-          2       20     33     c
+      index    start    end  label
+          0        0      5  a
+          1       10     12  b
+          2       20     33  c
     shape: (3, 2), time unit: sec.
 
     Apply numpy functions to an IntervalSet:
@@ -140,9 +136,8 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     shape: (2, 2), time unit: sec.
 
     >>> np.diff(ep, 1)
-    UserWarning: Converting IntervalSet to numpy.array
     array([[ 5.],
-            [10.]])
+           [10.]])
 
     Slicing an IntervalSet:
 
@@ -150,13 +145,15 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     array([ 0., 10.])
 
     >>> ep[0]
-    start    end
-    0        0      5
-    shape: (1, 2)
+      index    start    end
+          0        0      5
+    shape: (1, 2), time unit: sec.
 
     Modifying the `IntervalSet` will raise an error:
 
     >>> ep[0,0] = 1
+    Traceback (most recent call last):
+        ...
     RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.
     """
 
@@ -924,12 +921,13 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         To load you file, you can use the `nap.load_file` function :
 
-        >>> ep = nap.load_file("my_path/my_ep.npz")
+        >>> ep = nap.load_file("my_ep.npz")
         >>> ep
-           start   end
-        0    0.0   5.0
-        1   10.0  12.0
-        2   20.0  33.0
+          index    start    end
+              0        0      5
+              1       10     12
+              2       20     33
+        shape: (3, 2), time unit: sec.
 
         Raises
         ------
@@ -1043,10 +1041,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> metadata = pd.DataFrame(data=['left','right','left'], columns=['choice'])
         >>> ep.set_info(metadata)
         >>> ep
-          index    start    end     choice
-              0        0      5     left
-              1       10     12     right
-              2       20     33     left
+          index    start    end  choice
+              0        0      5  left
+              1       10     12  right
+              2       20     33  left
         shape: (3, 2), time unit: sec.
 
         To add metadata with a dictionary:
@@ -1054,10 +1052,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> metadata = {"reward": [1, 0, 1]}
         >>> ep.set_info(metadata)
         >>> ep
-          index    start    end     choice      reward
-              0        0      5     left             1
-              1       10     12     right            0
-              2       20     33     left             1
+          index    start    end  choice      reward
+              0        0      5  left             1
+              1       10     12  right            0
+              2       20     33  left             1
         shape: (3, 2), time unit: sec.
 
         To add metadata with a keyword argument (pd.Series, numpy.ndarray, list or tuple):
@@ -1065,40 +1063,40 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> stim = pd.Series(data = [10, -23, 12])
         >>> ep.set_info(stim=stim)
         >>> ep
-          index    start    end     choice      reward    stim
-              0        0      5     left             1      10
-              1       10     12     right            0     -23
-              2       20     33     left             1      12
+          index    start    end  choice      reward    stim
+              0        0      5  left             1      10
+              1       10     12  right            0     -23
+              2       20     33  left             1      12
         shape: (3, 2), time unit: sec.
 
         To add metadata as an attribute:
 
         >>> ep.label = ["a", "b", "c"]
         >>> ep
-          index    start    end     choice      reward  label
-              0        0      5     left             1  a
-              1       10     12     right            0  b
-              2       20     33     left             1  c
+          index    start    end  choice      reward    stim  label    ...
+              0        0      5  left             1      10  a        ...
+              1       10     12  right            0     -23  b        ...
+              2       20     33  left             1      12  c        ...
         shape: (3, 2), time unit: sec.
 
         To add metadata as a key:
 
         >>> ep["error"] = [0, 0, 0]
         >>> ep
-          index    start    end     choice      reward  label      error
-              0        0      5     left             1  a             0
-              1       10     12     right            0  b             0
-              2       20     33     left             1  c             0
+          index    start    end  choice      reward    stim  label      error  ...
+              0        0      5  left             1      10  a              0  ...
+              1       10     12  right            0     -23  b              0  ...
+              2       20     33  left             1      12  c              0  ...
         shape: (3, 2), time unit: sec.
 
         Metadata can be overwritten:
 
         >>> ep.set_info(label=["x", "y", "z"])
         >>> ep
-          index    start    end     choice      reward  label      error
-              0        0      5     left             1  x             0
-              1       10     12     right            0  y             0
-              2       20     33     left             1  z             0
+          index    start    end  choice      reward    stim  label      error  ...
+              0        0      5  left             1      10  x              0  ...
+              1       10     12  right            0     -23  y              0  ...
+              2       20     33  left             1      12  z              0  ...
         shape: (3, 2), time unit: sec.
         """
         _MetadataMixin.set_info(self, metadata, **kwargs)
@@ -1123,33 +1121,42 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         To access a single metadata column:
 
         >>> ep.get_info("l1")
-        array([1, 2, 3])
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
 
         To access multiple metadata columns:
 
         >>> ep.get_info(["l1", "l2"])
-             l1    l2
-        0    1     x
-        1    2     x
-        2    3     y
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
 
         To access metadata as an attribute:
 
         >>> ep.l1
-        array([1, 2, 3])
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
 
         To access metadata as a key:
 
         >>> ep["l1"]
-        array([1, 2, 3])
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
 
         Multiple metadata columns can be accessed as keys:
 
         >>> ep[["l1", "l2"]]
-             l1    l2
-        0    1     x
-        1    2     x
-        2    3     y
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
         """
         return _MetadataMixin.get_info(self, key)
 
@@ -1162,7 +1169,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> import numpy as np
         >>> times = np.array([[0, 5], [10, 12], [20, 33]])
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
-        >>> ep = nap.IntervalSet(tmp,metadata=metadata)
+        >>> ep = nap.IntervalSet(times,metadata=metadata)
         >>> ep
           index    start    end    l1  l2      l3
               0        0      5     1  x        4
@@ -1201,7 +1208,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> import numpy as np
         >>> times = np.array([[0, 5], [10, 12], [20, 33]])
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
-        >>> ep = nap.IntervalSet(tmp,metadata=metadata)
+        >>> ep = nap.IntervalSet(times,metadata=metadata)
         >>> ep
           index    start    end    l1  l2      l3
               0        0      5     1  x        4
@@ -1253,12 +1260,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         Grouping by a single column:
 
         >>> ep.groupby("l2")
-        {'x': [0, 1], 'y': [2]}
+        {'x': array([0, 1]), 'y': array([2])}
 
         Grouping by multiple columns:
 
         >>> ep.groupby(["l1","l2"])
-        {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
+        {(1, 'x'): array([0]), (2, 'x'): array([1]), (2, 'y'): array([2])}
 
         Filtering to a specific group using the output dictionary:
 
@@ -1335,8 +1342,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
           * unit     (unit) int64 24B 1 2 3
           * 0        (0) float64 16B -0.25 0.25
         Attributes:
-            occupancy:  [nan  9.]
-            bin_edges:  [array([-0.5,  0. ,  0.5])], 'y': <xarray.DataArray (unit: 3, 0: 2)> Size: 48B
+            occupancy:  [0. 9.]
+            bin_edges:  [array([-0.5,  0. ,  0.5])]
+            fs:         1.0
+            rates:      [1.28571429 2.28571429 5.28571429], 'y': <xarray.DataArray (unit: 3, 0: 2)> Size: 48B
         array([[       nan, 1.        ],
                [       nan, 1.92857143],
                [       nan, 4.71428571]])
@@ -1344,7 +1353,9 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
           * unit     (unit) int64 24B 1 2 3
           * 0        (0) float64 16B 0.75 1.25
         Attributes:
-            occupancy:  [nan 14.]
-            bin_edges:  [array([0.5, 1. , 1.5])]}
+            occupancy:  [ 0. 14.]
+            bin_edges:  [array([0.5, 1. , 1.5])]
+            fs:         1.0
+            rates:      [1.07692308 2.07692308 5.07692308]}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
