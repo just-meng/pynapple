@@ -1,5 +1,12 @@
 # Releases
 
+### 0.11.3 (2026-05-26)
+
+- Fixed `NeuroSuiteIO` channel indexing: `skip` and `groups` are now keyed by channel ID instead of sequential count, correcting channel ordering when IDs are non-contiguous.
+- Fixed `TsIndex` to preserve full floating-point precision for timestamps already in seconds by removing unnecessary `np.around` rounding, resolving precision loss for UTC-based timestamps.
+- Fixed doctests across core modules (`interval_set`, `time_series`, `ts_group`) and process modules (`signal`, `decoding`, `randomize`). Added a GitHub Actions CI workflow to run doctests on every pull request.
+
+
 ### 0.11.2 (2026-05-13)
 
 - Fixed out-of-bounds memory access in `jitrestrict`, `jitrestrict_with_count`, `jitin_interval`, `jitremove_nan`, `jitthreshold`, and `jitunion_isets` when called with empty time arrays or empty epoch sets. With Numba JIT enabled these manifested as random crashes or segfaults; with JIT disabled they raised `IndexError`.
