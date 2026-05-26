@@ -295,8 +295,8 @@ class NeuroSuiteIO:
             for ch in channels:
                 ch_id = ch["id"]
                 self.channel_order[count] = ch_id
-                self.skip[count] = ch["skip"]
-                self.groups[ch["id"]] = group_idx
+                self.skip[ch_id] = ch["skip"]
+                self.groups[ch_id] = group_idx
                 count += 1
         self.binary_metadata = {
             "anatomy": np.argsort(self.channel_order),  # Different for pynaviz
