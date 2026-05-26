@@ -66,6 +66,7 @@ dev = [
     "flake8",                       # Code linter
     "Flake8-pyproject",             # So that flake8 can be configured in this file
     "coverage",                     # Test coverage measurement
+    "matplotlib",
 ]
 doc = [
     "matplotlib",

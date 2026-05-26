@@ -54,7 +54,7 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None, mode="drop"):
         26.0
         28.0
         34.3
-        shape: 4
+        shape: 3
 
     The last timepoint falls outside the time support, so it is dropped.
 
@@ -67,7 +67,7 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None, mode="drop"):
         Time (s)
         26.0
         34.3
-        shape: 3
+        shape: 2
 
     Using ``mode='wrap'`` to circularly wrap timestamps within the full time support:
 

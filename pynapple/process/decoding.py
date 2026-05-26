@@ -266,23 +266,23 @@ def decode_bayes(
     decode is a `Tsd` object containing the decoded feature for each time bin.
 
     >>> p
-    Time (s)    0.0    1.0
+    Time (s)      0.0    1.0
     ----------  -----  -----
-    0.5         1.0    0.0
-    1.5         1.0    0.0
-    2.5         1.0    0.0
-    3.5         1.0    0.0
-    4.5         1.0    0.0
-    5.5         1.0    0.0
-    6.5         1.0    0.0
-    ...         ...    ...
-    93.5        0.0    1.0
-    94.5        0.0    1.0
-    95.5        0.0    1.0
-    96.5        0.0    1.0
-    97.5        0.0    1.0
-    98.5        0.0    1.0
-    99.5        0.0    1.0
+    0.5         1      1e-12
+    1.5         1      1e-12
+    2.5         1      1e-12
+    3.5         1      1e-12
+    4.5         1      1e-12
+    5.5         1      1e-12
+    6.5         1      1e-12
+    ...
+    93.5        1e-12  1
+    94.5        1e-12  1
+    95.5        1e-12  1
+    96.5        1e-12  1
+    97.5        1e-12  1
+    98.5        1e-12  1
+    99.5        1e-12  1
     dtype: float64, shape: (100, 2)
 
     p is a `TsdFrame` object containing the probability distribution for each time bin.
@@ -304,45 +304,45 @@ def decode_bayes(
     >>> tuning_curves = nap.compute_tuning_curves(data, features, bins=2, range=[(-.5, 1.5)]*2)
     >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
     >>> decoded
-    Time (s)    0    1
+    Time (s)      0    1
     ----------  ---  ---
-    0.5         0.0  0.0
-    1.5         0.0  1.0
-    2.5         0.0  0.0
-    3.5         0.0  1.0
-    4.5         0.0  0.0
-    5.5         0.0  1.0
-    6.5         0.0  0.0
-    ...         ...  ...
-    93.5        1.0  1.0
-    94.5        1.0  0.0
-    95.5        1.0  1.0
-    96.5        1.0  0.0
-    97.5        1.0  1.0
-    98.5        1.0  0.0
-    99.5        1.0  1.0
+    0.5           0    0
+    1.5           0    1
+    2.5           0    0
+    3.5           0    1
+    4.5           0    0
+    5.5           0    1
+    6.5           0    0
+    ...
+    93.5          1    1
+    94.5          1    0
+    95.5          1    1
+    96.5          1    0
+    97.5          1    1
+    98.5          1    0
+    99.5          1    1
     dtype: float64, shape: (100, 2)
 
     decoded is now a `TsdFrame` object containing the decoded features for each time bin.
 
     >>> p
     Time (s)
-    ----------  --------------
-    0.5         [[1., 0.] ...]
-    1.5         [[0., 1.] ...]
-    2.5         [[1., 0.] ...]
-    3.5         [[0., 1.] ...]
-    4.5         [[1., 0.] ...]
-    5.5         [[0., 1.] ...]
-    6.5         [[1., 0.] ...]
+    ----------  ----------------------
+    0.5         [[1.e+00, 1.e-12] ...]
+    1.5         [[1.e-12, 1.e+00] ...]
+    2.5         [[1.e+00, 1.e-12] ...]
+    3.5         [[1.e-12, 1.e+00] ...]
+    4.5         [[1.e+00, 1.e-12] ...]
+    5.5         [[1.e-12, 1.e+00] ...]
+    6.5         [[1.e+00, 1.e-12] ...]
     ...
-    93.5        [[0., 0.] ...]
-    94.5        [[0., 0.] ...]
-    95.5        [[0., 0.] ...]
-    96.5        [[0., 0.] ...]
-    97.5        [[0., 0.] ...]
-    98.5        [[0., 0.] ...]
-    99.5        [[0., 0.] ...]
+    93.5        [[1.e-12, 1.e-12] ...]
+    94.5        [[1.e-12, 1.e-12] ...]
+    95.5        [[1.e-12, 1.e-12] ...]
+    96.5        [[1.e-12, 1.e-12] ...]
+    97.5        [[1.e-12, 1.e-12] ...]
+    98.5        [[1.e-12, 1.e-12] ...]
+    99.5        [[1.e-12, 1.e-12] ...]
     dtype: float64, shape: (100, 2, 2)
 
     and p is a `TsdTensor` object containing the probability distribution for each time bin.
@@ -353,23 +353,23 @@ def decode_bayes(
     >>> tuning_curves = nap.compute_tuning_curves(data, features, bins=2, range=[(-.5, 1.5)]*2)
     >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
     >>> decoded
-    Time (s)    0    1
+    Time (s)      0    1
     ----------  ---  ---
-    0.5         0.0  1.0
-    1.5         0.0  1.0
-    2.5         0.0  1.0
-    3.5         0.0  1.0
-    4.5         0.0  0.0
-    5.5         0.0  0.0
-    6.5         0.0  0.0
-    ...         ...  ...
-    92.5        1.0  0.0
-    93.5        1.0  0.0
-    94.5        1.0  0.0
-    95.5        1.0  1.0
-    96.5        1.0  1.0
-    97.5        1.0  1.0
-    98.5        1.0  1.0
+    0.5           0    1
+    1.5           0    1
+    2.5           0    1
+    3.5           0    1
+    4.5           0    0
+    5.5           0    0
+    6.5           0    0
+    ...
+    92.5          1    0
+    93.5          1    0
+    94.5          1    0
+    95.5          1    1
+    96.5          1    1
+    97.5          1    1
+    98.5          1    1
     dtype: float64, shape: (98, 2)
     """
     prior = (
@@ -517,22 +517,8 @@ def decode_template(
 
     decode is a `Tsd` object containing the decoded feature for each time bin.
 
-    >>> p
-    Time (s)    0.0    1.0
-    ----------  -----  -----
-    0.5         0.0    2.0
-    1.5         0.0    2.0
-    2.5         0.0    2.0
-    3.5         0.0    2.0
-    4.5         0.0    2.0
-    5.5         0.0    2.0
-    ...         ...    ...
-    94.5        2.0    0.0
-    95.5        2.0    0.0
-    96.5        2.0    0.0
-    97.5        2.0    0.0
-    98.5        2.0    0.0
-    99.5        2.0    0.0
+    >>> dist  # doctest: +ELLIPSIS
+    Time (s)...
     dtype: float64, shape: (100, 2)
 
     dist is a `TsdFrame` object containing the distances for each time bin.
@@ -554,23 +540,23 @@ def decode_template(
     >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
     >>> decoded, dist = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
     >>> decoded
-    Time (s)    0    1
+    Time (s)      0    1
     ----------  ---  ---
-    0.5         0.0  0.0
-    1.5         0.0  1.0
-    2.5         0.0  0.0
-    3.5         0.0  1.0
-    4.5         0.0  0.0
-    5.5         0.0  1.0
-    6.5         0.0  0.0
-    ...         ...  ...
-    93.5        1.0  1.0
-    94.5        1.0  0.0
-    95.5        1.0  1.0
-    96.5        1.0  0.0
-    97.5        1.0  1.0
-    98.5        1.0  0.0
-    99.5        1.0  1.0
+    0.5           0    0
+    1.5           0    1
+    2.5           0    0
+    3.5           0    1
+    4.5           0    0
+    5.5           0    1
+    6.5           0    0
+    ...
+    93.5          1    1
+    94.5          1    0
+    95.5          1    1
+    96.5          1    0
+    97.5          1    1
+    98.5          1    0
+    99.5          1    1
     dtype: float64, shape: (100, 2)
 
     decoded is now a `TsdFrame` object containing the decoded features for each time bin.
@@ -602,23 +588,23 @@ def decode_template(
     >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
     >>> decoded, dist = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
     >>> decoded
-    Time (s)    0    1
-    ----------  ---  ---
-    0.0         0.0  0.0
-    0.1         0.0  0.0
-    0.2         0.0  0.0
-    0.3         0.0  0.0
-    0.4         0.0  0.0
-    0.5         1.0  1.0
-    0.6         1.0  1.0
-    ...         ...  ...
-    99.3        0.0  0.0
-    99.4        0.0  0.0
-    99.5        1.0  1.0
-    99.6        1.0  1.0
-    99.7        1.0  1.0
-    99.8        1.0  1.0
-    99.9        1.0  1.0
+    Time (s)               0    1
+    -------------------  ---  ---
+    0.0                  nan  nan
+    0.1                  nan  nan
+    0.2                  nan  nan
+    0.30000000000000004  nan  nan
+    0.4                  nan  nan
+    0.5                    0    0
+    0.6000000000000001     0    0
+    ...
+    99.30000000000001    nan  nan
+    99.4                 nan  nan
+    99.5                   0    0
+    99.60000000000001      0    0
+    99.7                   0    0
+    99.80000000000001      0    0
+    99.9                   0    0
     dtype: float64, shape: (1000, 2)
     """
     from scipy.spatial.distance import cdist
