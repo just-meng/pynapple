@@ -262,10 +262,8 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 if metadata is not None and len(metadata):
                     if isinstance(metadata, pd.DataFrame):
                         metadata = metadata.iloc[valid].reset_index(drop=True)
-                    elif isinstance(metadata, dict):
-                        metadata = {k: np.array(v)[valid] for k, v in metadata.items()}
                     else:
-                        metadata = metadata[valid]
+                        metadata = {k: np.array(v)[valid] for k, v in metadata.items()}
 
         drop_meta = False
         if not (np.diff(start) > 0).all():
