@@ -153,6 +153,117 @@ def test_create_iset_from_us():
     np.testing.assert_array_almost_equal(end * 1e-6, ep.end)
 
 
+def test_nan_in_start():
+    """NaN in start: row is dropped, valid rows are kept, warning is raised."""
+    start = np.array([0.0, np.nan, 16.0])
+    end = np.array([5.0, 15.0, 20.0])
+    with pytest.warns(
+        UserWarning, match=r"1 row\(s\) with NaN start/end time\(s\) were dropped"
+    ):
+        ep = nap.IntervalSet(start=start, end=end)
+    np.testing.assert_array_almost_equal(ep.start, [0.0, 16.0])
+    np.testing.assert_array_almost_equal(ep.end, [5.0, 20.0])
+
+
+def test_nan_in_end():
+    """NaN in end: row is dropped, valid rows are kept, warning is raised."""
+    start = np.array([0.0, 10.0, 16.0])
+    end = np.array([5.0, np.nan, 20.0])
+    with pytest.warns(
+        UserWarning, match=r"1 row\(s\) with NaN start/end time\(s\) were dropped"
+    ):
+        ep = nap.IntervalSet(start=start, end=end)
+    np.testing.assert_array_almost_equal(ep.start, [0.0, 16.0])
+    np.testing.assert_array_almost_equal(ep.end, [5.0, 20.0])
+
+
+def test_nan_in_both_start_and_end():
+    """NaN in both start and end of the same row: only one row dropped."""
+    start = np.array([0.0, np.nan, 16.0])
+    end = np.array([5.0, np.nan, 20.0])
+    with pytest.warns(UserWarning, match=r"1 row\(s\) with NaN"):
+        ep = nap.IntervalSet(start=start, end=end)
+    np.testing.assert_array_almost_equal(ep.start, [0.0, 16.0])
+    np.testing.assert_array_almost_equal(ep.end, [5.0, 20.0])
+
+
+def test_nan_multiple_rows():
+    """Multiple NaN rows: count in warning reflects the actual number dropped."""
+    start = np.array([np.nan, 10.0, np.nan])
+    end = np.array([5.0, 15.0, 20.0])
+    with pytest.warns(UserWarning, match=r"2 row\(s\) with NaN"):
+        ep = nap.IntervalSet(start=start, end=end)
+    np.testing.assert_array_almost_equal(ep.start, [10.0])
+    np.testing.assert_array_almost_equal(ep.end, [15.0])
+
+
+def test_nan_all_rows_dropped():
+    """All rows are NaN: result is a valid empty IntervalSet."""
+    start = np.array([np.nan, np.nan])
+    end = np.array([np.nan, np.nan])
+    with pytest.warns(UserWarning, match=r"2 row\(s\) with NaN"):
+        ep = nap.IntervalSet(start=start, end=end)
+    assert ep.shape == (0, 2)
+
+
+def test_nan_with_metadata_preserved():
+    """Metadata rows aligned with valid intervals are preserved; NaN rows' metadata is dropped."""
+    start = np.array([0.0, np.nan, 16.0])
+    end = np.array([5.0, 15.0, 20.0])
+    metadata = {"label": ["a", "b", "c"]}
+    with pytest.warns(UserWarning, match=r"1 row\(s\) with NaN"):
+        ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
+    np.testing.assert_array_almost_equal(ep.start, [0.0, 16.0])
+    assert list(ep.label) == ["a", "c"]
+
+
+def test_nan_from_list_input():
+    """NaN handling works when start/end are passed as plain Python lists."""
+    start = [0.0, float("nan"), 16.0]
+    end = [5.0, 15.0, 20.0]
+    with pytest.warns(UserWarning, match=r"1 row\(s\) with NaN"):
+        ep = nap.IntervalSet(start=start, end=end)
+    np.testing.assert_array_almost_equal(ep.start, [0.0, 16.0])
+    np.testing.assert_array_almost_equal(ep.end, [5.0, 20.0])
+
+
+def test_nan_from_dataframe_input():
+    """NaN handling works when a DataFrame is passed as the start argument."""
+    df = pd.DataFrame(
+        {
+            "start": [0.0, np.nan, 16.0],
+            "end": [5.0, 15.0, 20.0],
+            "label": ["a", "b", "c"],
+        }
+    )
+    with pytest.warns(UserWarning, match=r"1 row\(s\) with NaN"):
+        ep = nap.IntervalSet(df)
+    np.testing.assert_array_almost_equal(ep.start, [0.0, 16.0])
+    assert list(ep.label) == ["a", "c"]
+
+
+def test_nan_from_tuple_pairs_input():
+    """NaN handling works when start/end pairs are passed as an iterable of tuples."""
+    pairs = [(0.0, 5.0), (np.nan, 15.0), (16.0, 20.0)]
+    with pytest.warns(UserWarning, match=r"1 row\(s\) with NaN"):
+        ep = nap.IntervalSet(pairs)
+    np.testing.assert_array_almost_equal(ep.start, [0.0, 16.0])
+    np.testing.assert_array_almost_equal(ep.end, [5.0, 20.0])
+
+
+def test_no_nan_no_warning():
+    """No NaN values: no warning is raised and data is unchanged."""
+    start = np.array([0.0, 10.0, 16.0])
+    end = np.array([5.0, 15.0, 20.0])
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        ep = nap.IntervalSet(start=start, end=end)
+    nan_warnings = [x for x in w if "NaN" in str(x.message)]
+    assert len(nan_warnings) == 0
+    np.testing.assert_array_almost_equal(ep.start, start)
+    np.testing.assert_array_almost_equal(ep.end, end)
+
+
 def test_create_empty_iset():
     ep = nap.IntervalSet(start=[], end=[])
     assert ep.shape == (0, 2)
@@ -592,7 +703,6 @@ def test_save_npz(metadata):
     assert "ep2.npz" in [f.name for f in Path(".").iterdir()]
 
     with np.load("ep.npz", allow_pickle=True) as file:
-
         keys = list(file.keys())
         assert "start" in keys
         assert "end" in keys
