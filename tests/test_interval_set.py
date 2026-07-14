@@ -25,10 +25,8 @@ def test_iset_properties():
     start = [0, 10, 16, 25]
     end = [5, 15, 20, 40]
     ep = nap.IntervalSet(start=start, end=end)
-    assert isinstance(ep.starts, nap.Ts)
-    assert isinstance(ep.ends, nap.Ts)
-    np.testing.assert_array_almost_equal(np.array(start), ep.starts.index)
-    np.testing.assert_array_almost_equal(np.array(end), ep.ends.index)
+    np.testing.assert_array_almost_equal(np.array(start), ep.start)
+    np.testing.assert_array_almost_equal(np.array(end), ep.end)
 
     assert ep.shape == ep.values.shape
     assert ep.ndim == ep.values.ndim

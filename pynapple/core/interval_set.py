@@ -248,9 +248,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         start = TsIndex.format_timestamps(start, time_units)
         end = TsIndex.format_timestamps(end, time_units)
 
-        start = TsIndex.format_timestamps(start, time_units)
-        end = TsIndex.format_timestamps(end, time_units)
-
         nan_mask = np.isnan(start) | np.isnan(end)
         if np.any(nan_mask):
             warnings.warn(
