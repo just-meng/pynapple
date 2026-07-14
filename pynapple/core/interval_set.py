@@ -257,13 +257,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             valid = ~nan_mask
             start = start[valid]
             end = end[valid]
-            if metadata is not None and len(metadata):
-                # metadata may be a DataFrame or any array-like with matching length
-                if metadata is not None and len(metadata):
-                    if isinstance(metadata, pd.DataFrame):
-                        metadata = metadata.iloc[valid].reset_index(drop=True)
-                    else:
-                        metadata = {k: np.array(v)[valid] for k, v in metadata.items()}
+            if metadata is not None:
+                if isinstance(metadata, pd.DataFrame):
+                    metadata = metadata.iloc[valid].reset_index(drop=True)
+                elif isinstance(metadata, dict):
+                    metadata = {k: np.array(v)[valid] for k, v in metadata.items()}
 
         drop_meta = False
         if not (np.diff(start) > 0).all():
