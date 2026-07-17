@@ -25,7 +25,18 @@ def compute_tuning_curves(
     return_counts=False,
 ):
     """
-    Computes n-dimensional tuning curves relative to n features.
+    Compute n-dimensional tuning curves describing how `data` varies as a
+    function of one or more `features`.
+
+    A tuning curve quantifies the relationship between a signal (e.g. neuronal
+    spike rate or a continuous measurement) and one or more explanatory
+    variables such as position, head direction, or speed. The feature space is
+    discretised into bins, the data are accumulated within each bin, and the
+    result is normalised by the occupancy of each bin (unless
+    `return_counts=True`).
+
+    If `epochs` is not provided, the tuning curves are computed over the time
+    support of `features`.
 
     Parameters
     ----------
