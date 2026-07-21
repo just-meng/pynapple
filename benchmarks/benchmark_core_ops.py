@@ -1,109 +1,76 @@
-"""Micro-benchmark for pynapple core operations: object construction,
-``restrict`` (single- and many-interval), indexing, and ``count``.
+"""Benchmark core pynapple operations touched by the speedups branch.
 
-Runs on synthetic sorted timestamps of increasing size, and reports the median
-wall time per call (numba JIT warmed up beforehand, so steady-state is measured
-rather than one-off compilation).
-
-Usage::
+Run on the PR branch and on `dev`/`main` to compare:
 
     python benchmarks/benchmark_core_ops.py
-    python benchmarks/benchmark_core_ops.py --sizes 100000 1000000
 
-These numbers back the trusted-construction and searchsorted-``restrict``
-optimizations: reconstruction paths (``restrict``/``get``/``count``/...) skip
-redundant revalidation, and ``restrict`` finds interval boundaries with
-``searchsorted`` + contiguous copies for realistic interval counts, falling back
-to the merge scan when intervals are very numerous.
+Times object construction, `restrict` (one and many epochs), `get`, and
+`count`, at a few data sizes. Numba is warmed up first so steady-state is
+measured, and each number is the median of repeated runs.
 """
 
-import argparse
 import timeit
 
 import numpy as np
 
 import pynapple as nap
 
+SIZES = [100_000, 1_000_000, 10_000_000]
 
-def bench(fn, *, min_time=0.25, repeats=7):
-    """Median seconds per call, with an adaptive loop count."""
+
+def median_ms(fn):
+    """Median milliseconds per call, with an adaptive loop count."""
     n = 1
-    while timeit.timeit(fn, number=n) < min_time / 5:
+    while timeit.timeit(fn, number=n) < 0.05:
         n *= 5
-        if n > 5_000_000:
-            break
-    return float(np.median([timeit.timeit(fn, number=n) / n for _ in range(repeats)]))
+    return 1e3 * np.median([timeit.timeit(fn, number=n) / n for _ in range(7)])
 
 
-def fmt(sec):
-    for unit, scale in (("s", 1), ("ms", 1e3), ("us", 1e6), ("ns", 1e9)):
-        if sec * scale >= 1:
-            return f"{sec * scale:8.2f} {unit}"
-    return f"{sec * 1e9:8.2f} ns"
-
-
-def make_data(n, rng):
-    t = np.cumsum(rng.exponential(1e-3, size=n)).astype(np.float64)
-    return t, rng.random(n), rng.random((n, 16))
-
-
-def warmup(rng):
-    t, d, _ = make_data(1000, rng)
-    ep = nap.IntervalSet(t[0], t[-1])
-    tsd = nap.Tsd(t=t, d=d, time_support=ep)
-    tsd.restrict(ep)
-    tsd.count(0.1)
-    tsd.get(t[10], t[900])
-    tsd[100:200]
-    nap.TsGroup({0: nap.Ts(t=t, time_support=ep)}, time_support=ep).count(0.1)
-
-
-def run(sizes):
+def make_data(n):
     rng = np.random.default_rng(0)
-    print("pynapple", nap.__version__, "| numpy", np.__version__)
-    print("warming up numba JIT...", flush=True)
-    warmup(rng)
+    t = np.sort(rng.random(n) * n).astype(np.float64)
+    return t, rng.random(n)
 
-    for n in sizes:
-        print("\n" + "=" * 60)
-        print(f"N = {n:,} timestamps")
-        print("=" * 60)
-        t, d1, d2 = make_data(n, rng)
-        t0, t1 = float(t[0]), float(t[-1])
-        ep = nap.IntervalSet(t0, t1)
-        tsd = nap.Tsd(t=t, d=d1, time_support=ep)
-        tsdframe = nap.TsdFrame(t=t, d=d2, time_support=ep)
-        ts = nap.Ts(t=t, time_support=ep)
 
+def many_epochs(t, m):
+    edges = np.linspace(t[0], t[-1], 2 * m + 1)
+    return nap.IntervalSet(start=edges[0:-1:2], end=edges[1::2])
+
+
+def main():
+    print(f"pynapple {nap.__version__} | numpy {np.__version__}\n")
+
+    # warm up numba (compile the paths we time)
+    t, d = make_data(1000)
+    ep = nap.IntervalSet(t[0], t[-1])
+    nap.Tsd(t=t, d=d, time_support=ep).restrict(ep).count(1.0)
+
+    results = {}
+    for n in SIZES:
+        t, d = make_data(n)
+        support = nap.IntervalSet(float(t[0]), float(t[-1]))
+        tsd = nap.Tsd(t=t, d=d, time_support=support)
         a, b = float(t[n // 4]), float(t[3 * n // 4])
-        one = nap.IntervalSet(a, b)
+        one_epoch = nap.IntervalSet(a, b)
+        hundred_epochs = many_epochs(t, 100)
+        bin_size = (t[-1] - t[0]) / 1000
 
-        def many(m):
-            edges = np.linspace(t0, t1, 2 * m + 1)
-            return nap.IntervalSet(start=edges[0:-1:2], end=edges[1::2])
+        benches = {
+            "Tsd(t, d, support)": lambda: nap.Tsd(t=t, d=d, time_support=support),
+            "restrict (1 epoch)": lambda: tsd.restrict(one_epoch),
+            "restrict (100 epochs)": lambda: tsd.restrict(hundred_epochs),
+            "get(a, b)": lambda: tsd.get(a, b),
+            "count(bin_size)": lambda: tsd.count(bin_size),
+        }
+        for name, fn in benches.items():
+            results.setdefault(name, []).append(median_ms(fn))
 
-        rows = [
-            ("Tsd(...) construct", lambda: nap.Tsd(t=t, d=d1, time_support=ep)),
-            ("Tsd.restrict (1 window)", lambda: tsd.restrict(one)),
-            ("Tsd.restrict (m=100)", lambda mi=many(100): tsd.restrict(mi)),
-            ("Tsd.restrict (m=10000)", lambda mi=many(10000): tsd.restrict(mi)),
-            ("TsdFrame.restrict (1 window)", lambda: tsdframe.restrict(one)),
-            ("Tsd.get(a, b)", lambda: tsd.get(a, b)),
-            ("Tsd[slice]", lambda: tsd[n // 4 : 3 * n // 4]),
-            ("Tsd.count(bin)", lambda: tsd.count((t1 - t0) / 1000)),
-            ("Ts.count(bin)", lambda: ts.count((t1 - t0) / 1000)),
-        ]
-        for label, fn in rows:
-            print(f"  {label:32}: {fmt(bench(fn))}")
+    header = f"{'operation':<24}" + "".join(f"{n:>14,}" for n in SIZES)
+    print(header)
+    print("-" * len(header))
+    for name, times in results.items():
+        print(f"{name:<24}" + "".join(f"{v:>11.3f} ms" for v in times))
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--sizes",
-        type=int,
-        nargs="+",
-        default=[100_000, 1_000_000, 10_000_000],
-        help="timestamp counts to benchmark",
-    )
-    run(parser.parse_args().sizes)
+    main()
