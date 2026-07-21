@@ -119,6 +119,15 @@ def _initialize_tsd_output(
     """
     kwargs = kwargs if kwargs is not None else {}
 
+    if values is None:
+        # value-less time series (only Ts): the output class is taken from the
+        # source object since there is no data array whose ndim we can inspect.
+        time_index = input_object.index if time_index is None else time_index
+        time_support = (
+            input_object.time_support if time_support is None else time_support
+        )
+        return type(input_object)(t=time_index, time_support=time_support)
+
     if isinstance(values, np.ndarray) or is_array_like(values):
         # if time and ep are passed use them, otherwise strip from inp
         time_index = input_object.index if time_index is None else time_index
@@ -161,7 +170,33 @@ def _initialize_tsd_output(
     return values
 
 
-class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
+class _ReconstructMixin:
+    """Bridge from the generic algorithms in :mod:`base_class` to the single
+    construction funnel.
+
+    ``base_class`` cannot import :func:`_initialize_tsd_output` (that would close
+    an import cycle with this module), so the generic algorithms reach the funnel
+    through this polymorphic seam: ``self._define_instance(...)`` resolves here,
+    where the funnel and the concrete classes are in scope.
+    """
+
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
+        """Return a new class instance via the construction funnel.
+
+        The output class is inferred from ``values`` (or is a ``Ts`` when
+        ``values`` is None). "columns", "metadata" and other attributes of self
+        are propagated to the new instance unless specified in kwargs.
+        """
+        return _initialize_tsd_output(
+            self,
+            values,
+            time_index=time_index,
+            time_support=time_support,
+            kwargs=kwargs,
+        )
+
+
+class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
     """
     Abstract base class for time series objects.
     Implement most of the shared functions across concrete classes `Tsd`, `TsdFrame`, `TsdTensor`
@@ -203,20 +238,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             )
 
         self.dtype = self.values.dtype
-
-    def _define_instance(self, time_index, time_support, values=None, **kwargs):
-        """
-        Define a new class instance.
-
-        Optional parameters for initialization are either passed to the function or are grabbed from self.
-        """
-        return _initialize_tsd_output(
-            self,
-            values,
-            time_index=time_index,
-            time_support=time_support,
-            kwargs=kwargs,
-        )
 
     def __setitem__(self, key, value):
         """setter for time series"""
@@ -3575,7 +3596,7 @@ class Tsd(_BaseTsd):
         return
 
 
-class Ts(_Base):
+class Ts(_ReconstructMixin, _Base):
     """
     Timestamps only object for a time series with only time index.
 
@@ -3613,23 +3634,6 @@ class Ts(_Base):
 
         self.nap_class = self.__class__.__name__
         self._initialized = True
-
-    def _define_instance(self, time_index, time_support, values=None, **kwargs):
-        """
-        Define a new class instance.
-
-        Optional parameters for initialization are either passed to the function or are grabbed from self.
-        """
-        if values is None:
-            return self.__class__(t=time_index, time_support=time_support)
-        else:
-            return _initialize_tsd_output(
-                self,
-                values,
-                time_index=time_index,
-                time_support=time_support,
-                kwargs=kwargs,
-            )
 
     def __repr__(self):
         upper = "Time (s)"
