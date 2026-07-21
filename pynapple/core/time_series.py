@@ -241,8 +241,14 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
             self.values.shape[0], len(self.index)
         )
 
-        # trusted construction: data is already restricted to time_support, so
-        # skip the (redundant) second restrict; rate was already set by _Base.
+        # Clip data to time_support (drop samples outside it). Skipped entirely
+        # under trusted construction. Otherwise validation-preserving fast paths
+        # avoid needless O(n) work:
+        #   - obvious no-op: a single interval already covering all timestamps;
+        #   - general no-op: the scan finds nothing outside the support, so
+        #     index/values/rate from _Base are already correct;
+        #   - a real clip rebuilds the index as trusted, since the clipped
+        #     timestamps are a sorted float64 subset (no re-sort / re-cast).
         if (
             isinstance(time_support, IntervalSet)
             and len(self.index)
@@ -250,15 +256,22 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
         ):
             starts = time_support.start
             ends = time_support.end
-            idx = _restrict(self.index.values, starts, ends)
-            t = self.index.values[idx]
-            d = self.values[idx]
+            time_array = self.index.values
 
-            self.index = TsIndex(t)
-            self.values = d
-            self.rate = self.index.shape[0] / np.sum(
-                time_support.values[:, 1] - time_support.values[:, 0]
+            covers_all = (
+                len(starts) == 1
+                and starts[0] <= time_array[0]
+                and time_array[-1] <= ends[0]
             )
+            if not covers_all:
+                idx = _restrict(time_array, starts, ends)
+                if len(idx) != len(time_array):
+                    with trusted_construction():
+                        self.index = TsIndex(time_array[idx])
+                    self.values = self.values[idx]
+                    self.rate = self.index.shape[0] / np.sum(
+                        time_support.values[:, 1] - time_support.values[:, 0]
+                    )
 
         self.dtype = self.values.dtype
 
@@ -3669,8 +3682,10 @@ class Ts(_ReconstructMixin, _Base):
         """
         super().__init__(t, time_units, time_support)
 
-        # trusted construction: timestamps are already restricted to time_support,
-        # so skip the (redundant) second restrict; rate was already set by _Base.
+        # Clip timestamps to time_support. Skipped under trusted construction;
+        # otherwise the same validation-preserving fast paths as _BaseTsd: an
+        # obvious/general no-op leaves index and rate untouched, and a real clip
+        # rebuilds the index as trusted (sorted float64 subset).
         if (
             isinstance(time_support, IntervalSet)
             and len(self.index)
@@ -3678,11 +3693,21 @@ class Ts(_ReconstructMixin, _Base):
         ):
             starts = time_support.start
             ends = time_support.end
-            idx = _restrict(self.index.values, starts, ends)
-            self.index = TsIndex(self.index.values[idx])
-            self.rate = self.index.shape[0] / np.sum(
-                time_support.values[:, 1] - time_support.values[:, 0]
+            time_array = self.index.values
+
+            covers_all = (
+                len(starts) == 1
+                and starts[0] <= time_array[0]
+                and time_array[-1] <= ends[0]
             )
+            if not covers_all:
+                idx = _restrict(time_array, starts, ends)
+                if len(idx) != len(time_array):
+                    with trusted_construction():
+                        self.index = TsIndex(time_array[idx])
+                    self.rate = self.index.shape[0] / np.sum(
+                        time_support.values[:, 1] - time_support.values[:, 0]
+                    )
 
         self.nap_class = self.__class__.__name__
         self._initialized = True
