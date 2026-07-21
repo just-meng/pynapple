@@ -15,6 +15,7 @@ import numpy as np
 from ._jitted_functions import (  # pjitconvolve,
     jitbin_array,
     jitcount,
+    jitgather_ranges,
     jitremove_nan,
     jitrestrict,
     jitrestrict_with_count,
@@ -26,6 +27,43 @@ from .utils import get_backend
 
 def _restrict(time_array, starts, ends):
     return jitrestrict(time_array, starts, ends)
+
+
+def _use_searchsorted_restrict(n_intervals, n_samples):
+    """Whether to restrict via searchsorted boundaries rather than a merge scan.
+
+    ``searchsorted`` does ``n_intervals`` binary searches, each ~log2(n_samples)
+    cache-missing memory jumps. Past a crossover, a single sequential merge scan
+    (:func:`jitrestrict`, O(n)) is faster despite scanning everything. Realistic
+    interval counts are far below the crossover; the factor here stays
+    conservatively on the searchsorted side so the many-interval path (where the
+    scan wins) is never regressed.
+    """
+    return n_intervals * 256 < n_samples
+
+
+def _restrict_ranges(time_array, data_array, starts, ends):
+    """Restrict to intervals via searchsorted boundaries + contiguous copies.
+
+    Returns copied ``(new_time, new_data)``; ``new_data`` is None when
+    ``data_array`` is None (timestamps-only objects). Assumes ``time_array`` is
+    sorted and ``starts``/``ends`` are sorted and disjoint (guaranteed by
+    IntervalSet), so the result is sorted and lies within the intervals. The
+    inclusivity ``start <= t <= end`` matches :func:`jitrestrict`.
+    """
+    il = np.searchsorted(time_array, starts, side="left")
+    ir = np.searchsorted(time_array, ends, side="right")
+    total = int(np.sum(ir - il))
+
+    new_time = np.empty(total, dtype=time_array.dtype)
+    jitgather_ranges(time_array, il, ir, new_time)
+
+    if data_array is None:
+        return new_time, None
+
+    new_data = np.empty((total,) + data_array.shape[1:], dtype=data_array.dtype)
+    jitgather_ranges(data_array, il, ir, new_data)
+    return new_time, new_data
 
 
 def _count(time_array, starts, ends, bin_size=None, dtype=None):

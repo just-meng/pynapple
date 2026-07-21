@@ -35,7 +35,7 @@ from ._core_functions import (
 from .base_class import _Base
 from .interval_set import IntervalSet
 from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
-from .time_index import TsIndex
+from .time_index import TsIndex, is_trusted_construction, trusted_construction
 from .utils import (
     _concatenate_tsd,
     _convert_iter_to_str,
@@ -68,6 +68,23 @@ def _get_class(data):
         return TsdFrame
     else:
         return TsdTensor
+
+
+def _index_preserves_order(key):
+    """Return True if indexing the time axis with ``key`` cannot reorder the
+    timestamps (so the result stays sorted).
+
+    Only positive-step slices and boolean masks are guaranteed order-preserving.
+    Integer / integer-array fancy indexing may reorder, so it is treated as
+    unsafe (the result is validated the usual way).
+    """
+    if isinstance(key, tuple):
+        key = key[0] if len(key) else slice(None)
+    if isinstance(key, slice):
+        return key.step is None or key.step > 0
+    if isinstance(key, np.ndarray):
+        return key.dtype == np.bool_
+    return False
 
 
 def _initialize_tsd_output(
@@ -224,7 +241,13 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
             self.values.shape[0], len(self.index)
         )
 
-        if isinstance(time_support, IntervalSet) and len(self.index):
+        # trusted construction: data is already restricted to time_support, so
+        # skip the (redundant) second restrict; rate was already set by _Base.
+        if (
+            isinstance(time_support, IntervalSet)
+            and len(self.index)
+            and not is_trusted_construction()
+        ):
             starts = time_support.start
             ends = time_support.end
             idx = _restrict(self.index.values, starts, ends)
@@ -298,7 +321,9 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
             else:
                 out = ufunc(*new_args, **kwargs)
 
-            return _initialize_tsd_output(self, out)
+            # elementwise: the time index is unchanged (sorted, in-support)
+            with trusted_construction():
+                return _initialize_tsd_output(self, out)
         else:
             return NotImplemented
 
@@ -352,13 +377,15 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
         if modifies_time_axis(func, new_args, kwargs):
             return out
         else:
-            if hasattr(out, "shape") and self.shape == out.shape:
-                return _initialize_tsd_output(self, out)
-            else:
-                try:
-                    return _initialize_tsd_output(self, out, drop_metadata=True)
-                except Exception:
+            # time axis unchanged: reuse self's (sorted, in-support) index
+            with trusted_construction():
+                if hasattr(out, "shape") and self.shape == out.shape:
                     return _initialize_tsd_output(self, out)
+                else:
+                    try:
+                        return _initialize_tsd_output(self, out, drop_metadata=True)
+                    except Exception:
+                        return _initialize_tsd_output(self, out)
 
     def as_array(self):
         """
@@ -443,7 +470,9 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
+        # bin centers are sorted and within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
 
     def dropna(self, update_time_support=True):
         """Drop every row containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
@@ -478,7 +507,9 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             ep = self.time_support
 
-        return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
+        # non-NaN rows are a sorted subset within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -538,9 +569,11 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
-        return _initialize_tsd_output(
-            self, new_data_array, time_index=time_array, time_support=ep
-        )
+        # convolution preserves the (sorted, in-support) time index
+        with trusted_construction():
+            return _initialize_tsd_output(
+                self, new_data_array, time_index=time_array, time_support=ep
+            )
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
@@ -713,9 +746,11 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
             new_time[i_start : i_start + d] = self.t[slc][::down]
             i_start += d
 
-        return _initialize_tsd_output(
-            self, new_data, time_index=new_time, time_support=ep
-        )
+        # per-epoch downsampled times are sorted and within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(
+                self, new_data, time_index=new_time, time_support=ep
+            )
 
     def interpolate(self, ts, ep=None, left=None, right=None):
         """Wrapper of the numpy linear interpolation method. See [numpy interpolate](https://numpy.org/doc/stable/reference/generated/numpy.interp.html)
@@ -787,7 +822,11 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
 
             start += len(t)
 
-        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
+        # interpolation grid comes from a sorted target within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(
+                self, new_d, time_index=new_t, time_support=ep
+            )
 
     def derivative(self, ep=None):
         """Computes the derivative of the time series with respect to time. Wraps numpy.gradient.
@@ -848,7 +887,11 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
 
             start += len(tmp)
 
-        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
+        # per-epoch source timestamps are sorted and within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(
+                self, new_d, time_index=new_t, time_support=ep
+            )
 
     def to_trial_tensor(self, ep, align="start", padding_value=np.nan):
         """
@@ -1078,7 +1121,8 @@ class TsdTensor(_BaseTsd):
 
         if isinstance(index, Number):
             index = np.array([index])
-        return _initialize_tsd_output(self, output, time_index=index)
+        with trusted_construction(_index_preserves_order(key)):
+            return _initialize_tsd_output(self, output, time_index=index)
 
     @add_docstring("get_slice", _Base)
     def get_slice(self, start, end=None, time_unit="s"):
@@ -1878,9 +1922,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
                 kwargs["columns"] = columns
                 kwargs["metadata"] = self._metadata.loc[columns]
-                return _initialize_tsd_output(
-                    self, output, time_index=index, kwargs=kwargs
-                )
+                with trusted_construction(_index_preserves_order(key)):
+                    return _initialize_tsd_output(
+                        self, output, time_index=index, kwargs=kwargs
+                    )
             else:
                 return output
 
@@ -2985,7 +3030,8 @@ class Tsd(_BaseTsd):
             index = np.array([key])
         else:
             index = self.index.__getitem__(key)
-        return _initialize_tsd_output(self, output, time_index=index, kwargs=kwargs)
+        with trusted_construction(_index_preserves_order(key)):
+            return _initialize_tsd_output(self, output, time_index=index, kwargs=kwargs)
 
     def as_series(self):
         """
@@ -3623,7 +3669,13 @@ class Ts(_ReconstructMixin, _Base):
         """
         super().__init__(t, time_units, time_support)
 
-        if isinstance(time_support, IntervalSet) and len(self.index):
+        # trusted construction: timestamps are already restricted to time_support,
+        # so skip the (redundant) second restrict; rate was already set by _Base.
+        if (
+            isinstance(time_support, IntervalSet)
+            and len(self.index)
+            and not is_trusted_construction()
+        ):
             starts = time_support.start
             ends = time_support.end
             idx = _restrict(self.index.values, starts, ends)

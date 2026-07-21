@@ -2,6 +2,23 @@ import numpy as np
 from numba import jit  # , njit, prange
 
 
+@jit(nopython=True, cache=True)
+def jitgather_ranges(arr, il, ir, out):
+    """Copy the concatenation of the contiguous ranges ``arr[il[k]:ir[k]]`` into
+    the pre-allocated ``out``. Copies are contiguous (per-range memcpy) rather
+    than a fancy-index gather. Works for 1D and N-D ``arr`` (numba specializes on
+    the leading axis). ``il``/``ir`` must describe non-overlapping ranges in
+    increasing order, as produced by ``searchsorted`` over sorted, disjoint
+    intervals.
+    """
+    pos = 0
+    for k in range(len(il)):
+        cnt = ir[k] - il[k]
+        out[pos : pos + cnt] = arr[il[k] : ir[k]]
+        pos += cnt
+    return pos
+
+
 ################################
 # Time only functions
 ################################
