@@ -469,6 +469,13 @@ class _Base(abc.ABC):
 
         By default, the time support doesn't change. If you want to change the time support, use the `restrict` function.
 
+        .. note::
+            When ``end`` is provided, this returns a **view** into the original
+            time series: the result shares the same underlying timestamp and data
+            arrays (no copy). Modifying the returned object in place will
+            therefore modify the original. Call ``.copy()`` if you need an
+            independent object, or use ``restrict`` (which always copies).
+
         Parameters
         ----------
         start : float or int
@@ -506,6 +513,11 @@ class _Base(abc.ABC):
         slice : slice
             A slice determining the start and end indices, with unit step
             Slicing the array will be equivalent to calling get: `ts[s].t == ts.get(start, end).t` with `s` being the slice object.
+
+        .. note::
+            Indexing a time series with the returned slice (like ``get``) yields
+            a **view** sharing the original's underlying arrays, not a copy;
+            in-place modification of the result modifies the original.
 
 
         Raises
