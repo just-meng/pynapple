@@ -15,7 +15,6 @@ import numpy as np
 from ._jitted_functions import (  # pjitconvolve,
     jitbin_array,
     jitcount,
-    jitgather_ranges,
     jitremove_nan,
     jitrestrict,
     jitrestrict_with_count,
@@ -33,13 +32,13 @@ def _use_searchsorted_restrict(n_intervals, n_samples):
     """Whether to restrict via searchsorted boundaries rather than a merge scan.
 
     ``searchsorted`` does ``n_intervals`` binary searches, each ~log2(n_samples)
-    cache-missing memory jumps. Past a crossover, a single sequential merge scan
-    (:func:`jitrestrict`, O(n)) is faster despite scanning everything. Realistic
-    interval counts are far below the crossover; the factor here stays
-    conservatively on the searchsorted side so the many-interval path (where the
-    scan wins) is never regressed.
+    cache-missing memory jumps, then copies the selected ranges with numpy. Past
+    a crossover (empirically ~n_samples/1000) a single sequential merge scan
+    (:func:`jitrestrict`, O(n)) becomes faster. Realistic interval counts are far
+    below that, so this stays on the searchsorted side up to ~n_samples/1024 and
+    hands off to the scan beyond it, so the many-interval path never regresses.
     """
-    return n_intervals * 256 < n_samples
+    return n_intervals * 1024 < n_samples
 
 
 def _restrict_ranges(time_array, data_array, starts, ends):
@@ -50,19 +49,30 @@ def _restrict_ranges(time_array, data_array, starts, ends):
     sorted and ``starts``/``ends`` are sorted and disjoint (guaranteed by
     IntervalSet), so the result is sorted and lies within the intervals. The
     inclusivity ``start <= t <= end`` matches :func:`jitrestrict`.
+
+    The selected ranges are copied with plain numpy contiguous slice assignment
+    (one memcpy per interval), which beats both a fancy-index gather and a numba
+    kernel for the realistic (few-interval) regime this path handles.
     """
     il = np.searchsorted(time_array, starts, side="left")
     ir = np.searchsorted(time_array, ends, side="right")
     total = int(np.sum(ir - il))
 
     new_time = np.empty(total, dtype=time_array.dtype)
-    jitgather_ranges(time_array, il, ir, new_time)
+    new_data = (
+        None
+        if data_array is None
+        else np.empty((total,) + data_array.shape[1:], dtype=data_array.dtype)
+    )
 
-    if data_array is None:
-        return new_time, None
+    pos = 0
+    for k in range(len(il)):
+        count = ir[k] - il[k]
+        new_time[pos : pos + count] = time_array[il[k] : ir[k]]
+        if new_data is not None:
+            new_data[pos : pos + count] = data_array[il[k] : ir[k]]
+        pos += count
 
-    new_data = np.empty((total,) + data_array.shape[1:], dtype=data_array.dtype)
-    jitgather_ranges(data_array, il, ir, new_data)
     return new_time, new_data
 
 

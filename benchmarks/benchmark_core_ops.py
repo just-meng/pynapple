@@ -48,9 +48,12 @@ def main():
     results = {}
     for n in SIZES:
         t, d = make_data(n)
-        support = nap.IntervalSet(float(t[0]), float(t[-1]))
+        # An explicit support covering all timestamps: the common "coverage"
+        # case, and the one that exercises the construction fast path (with
+        # time_support=None the clip is skipped on every version, hiding it).
+        support = nap.IntervalSet(t[0], t[-1])
         tsd = nap.Tsd(t=t, d=d, time_support=support)
-        a, b = float(t[n // 4]), float(t[3 * n // 4])
+        a, b = t[n // 4], t[3 * n // 4]
         one_epoch = nap.IntervalSet(a, b)
         hundred_epochs = many_epochs(t, 100)
         bin_size = (t[-1] - t[0]) / 1000
