@@ -47,11 +47,11 @@ def _spy():
 @pytest.mark.parametrize(
     "n_intervals, n_samples, expected",
     [
-        (1, 1000, True),  # 256 < 1000
-        (3, 1000, True),  # 768 < 1000
-        (4, 1000, False),  # 1024 !< 1000
-        (100, 10_000_000, True),
-        (100_000, 10_000_000, False),
+        (1, 100_000, True),  # 1024 < 100000
+        (10, 100_000, True),  # 10240 < 100000
+        (100, 100_000, False),  # 102400 !< 100000
+        (100, 10_000_000, True),  # 102400 < 10M
+        (10_000, 10_000_000, False),  # 10.24M !< 10M
     ],
 )
 def test_use_searchsorted_threshold(n_intervals, n_samples, expected):
@@ -62,7 +62,7 @@ def test_use_searchsorted_threshold(n_intervals, n_samples, expected):
 # routing (spy)
 # --------------------------------------------------------------------------
 def test_few_intervals_route_to_searchsorted():
-    tsd = _tsd(1000)
+    tsd = _tsd(100_000)
     ep = nap.IntervalSet(100, 200)  # 1 interval -> searchsorted path
     ranges_patch, scan_patch = _spy()
     with ranges_patch as ranges, scan_patch as scan:
@@ -75,9 +75,9 @@ def test_few_intervals_route_to_searchsorted():
 
 
 def test_many_intervals_route_to_scan():
-    n = 1000
+    n = 100_000
     tsd = _tsd(n)
-    ep = _tiled_intervals(n, 5)  # 5 * 256 = 1280 !< 1000 -> merge scan
+    ep = _tiled_intervals(n, 200)  # 200 * 1024 !< 100000 -> merge scan
     ranges_patch, scan_patch = _spy()
     with ranges_patch as ranges, scan_patch as scan:
         tsd.restrict(ep)
@@ -86,8 +86,8 @@ def test_many_intervals_route_to_scan():
 
 
 def test_ts_without_values_routes_to_searchsorted():
-    t = np.arange(1000.0)
-    ts = nap.Ts(t=t, time_support=nap.IntervalSet(0, 999))
+    t = np.arange(100_000.0)
+    ts = nap.Ts(t=t, time_support=nap.IntervalSet(0, t[-1]))
     ep = nap.IntervalSet(100, 200)
     ranges_patch, scan_patch = _spy()
     with ranges_patch as ranges, scan_patch as scan:
