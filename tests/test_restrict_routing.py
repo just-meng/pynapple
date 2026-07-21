@@ -99,12 +99,12 @@ def test_ts_without_values_routes_to_searchsorted():
 
 def test_non_numpy_data_routes_to_scan():
     """Array-like (non-ndarray) values must use the scan path even for a single
-    interval, since the searchsorted kernel is numpy-only."""
-    t = np.arange(1000.0)
+    interval, since the searchsorted copy path needs a real numpy array."""
+    t = np.arange(100_000.0)
     tsd = nap.Tsd(
         t=t,
-        d=MockArray(np.arange(1000.0)),
-        time_support=nap.IntervalSet(0, 999),
+        d=MockArray(np.arange(100_000.0)),
+        time_support=nap.IntervalSet(0, t[-1]),
         load_array=False,
     )
     ep = nap.IntervalSet(100, 200)  # few intervals, but non-numpy data
@@ -116,7 +116,7 @@ def test_non_numpy_data_routes_to_scan():
 
 
 # --------------------------------------------------------------------------
-# both paths must produce identical output (incl. N-D data via jitgather_ranges)
+# both paths must produce identical output (incl. N-D data)
 # --------------------------------------------------------------------------
 @pytest.fixture(
     params=["ts", "tsd", "tsdframe", "tsdtensor"],
