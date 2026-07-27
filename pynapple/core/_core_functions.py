@@ -28,6 +28,54 @@ def _restrict(time_array, starts, ends):
     return jitrestrict(time_array, starts, ends)
 
 
+def _use_searchsorted_restrict(n_intervals, n_samples):
+    """Whether to restrict via searchsorted boundaries rather than a merge scan.
+
+    ``searchsorted`` does ``n_intervals`` binary searches, each ~log2(n_samples)
+    cache-missing memory jumps, then copies the selected ranges with numpy. Past
+    a crossover (empirically ~n_samples/1000) a single sequential merge scan
+    (:func:`jitrestrict`, O(n)) becomes faster. Realistic interval counts are far
+    below that, so this stays on the searchsorted side up to ~n_samples/1024 and
+    hands off to the scan beyond it, so the many-interval path never regresses.
+    """
+    return n_intervals * 1024 < n_samples
+
+
+def _restrict_ranges(time_array, data_array, starts, ends):
+    """Restrict to intervals via searchsorted boundaries + contiguous copies.
+
+    Returns copied ``(new_time, new_data)``; ``new_data`` is None when
+    ``data_array`` is None (timestamps-only objects). Assumes ``time_array`` is
+    sorted and ``starts``/``ends`` are sorted and disjoint (guaranteed by
+    IntervalSet), so the result is sorted and lies within the intervals. The
+    inclusivity ``start <= t <= end`` matches :func:`jitrestrict`.
+
+    The selected ranges are copied with plain numpy contiguous slice assignment
+    (one memcpy per interval), which beats both a fancy-index gather and a numba
+    kernel for the realistic (few-interval) regime this path handles.
+    """
+    il = np.searchsorted(time_array, starts, side="left")
+    ir = np.searchsorted(time_array, ends, side="right")
+    total = int(np.sum(ir - il))
+
+    new_time = np.empty(total, dtype=time_array.dtype)
+    new_data = (
+        None
+        if data_array is None
+        else np.empty((total,) + data_array.shape[1:], dtype=data_array.dtype)
+    )
+
+    pos = 0
+    for k in range(len(il)):
+        count = ir[k] - il[k]
+        new_time[pos : pos + count] = time_array[il[k] : ir[k]]
+        if new_data is not None:
+            new_data[pos : pos + count] = data_array[il[k] : ir[k]]
+        pos += count
+
+    return new_time, new_data
+
+
 def _count(time_array, starts, ends, bin_size=None, dtype=None):
     if isinstance(bin_size, (float, int)):
         t, d = jitcount(time_array, starts, ends, bin_size, dtype)
