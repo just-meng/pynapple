@@ -8,9 +8,15 @@ from numbers import Number
 
 import numpy as np
 
-from ._core_functions import _count, _restrict, _value_from
+from ._core_functions import (
+    _count,
+    _restrict,
+    _restrict_ranges,
+    _use_searchsorted_restrict,
+    _value_from,
+)
 from .interval_set import IntervalSet
-from .time_index import TsIndex
+from .time_index import TsIndex, trusted_construction
 from .utils import check_filename, convert_to_numpy_array
 
 
@@ -217,7 +223,11 @@ class _Base(abc.ABC):
 
         time_support = IntervalSet(start=starts, end=ends)
 
-        return data._define_instance(time_index=t, time_support=time_support, values=d)
+        # `t` is a sorted subset of self's timestamps within `time_support`
+        with trusted_construction():
+            return data._define_instance(
+                time_index=t, time_support=time_support, values=d
+            )
 
     def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
         """
@@ -288,7 +298,9 @@ class _Base(abc.ABC):
 
         t, d = _count(time_array, starts, ends, bin_size, dtype=dtype)
 
-        return self._define_instance(t, ep, values=d)
+        # bin centers are sorted and within `ep` by construction
+        with trusted_construction():
+            return self._define_instance(t, ep, values=d)
 
     def time_diff(self, align="center", epochs=None):
         """
@@ -337,9 +349,11 @@ class _Base(abc.ABC):
                 )
                 start += len(tmp) - 1
 
-        return self._define_instance(
-            time_index=new_t[:start], time_support=epochs, values=new_d[:start]
-        )
+        # differences are emitted per-epoch in order -> sorted and within `epochs`
+        with trusted_construction():
+            return self._define_instance(
+                time_index=new_t[:start], time_support=epochs, values=new_d[:start]
+            )
 
     def restrict(self, iset):
         """
@@ -362,9 +376,22 @@ class _Base(abc.ABC):
         starts = iset.start
         ends = iset.end
 
-        idx = _restrict(time_array, starts, ends)
-        data = None if not hasattr(self, "values") else self.values[idx]
-        return self._define_instance(time_array[idx], iset, values=data)
+        values = getattr(self, "values", None)
+        if (
+            values is None or isinstance(values, np.ndarray)
+        ) and _use_searchsorted_restrict(len(starts), len(time_array)):
+            # few intervals: locate boundaries with searchsorted and copy
+            # contiguous ranges (no O(n) scan, no fancy-index gather)
+            new_t, data = _restrict_ranges(time_array, values, starts, ends)
+        else:
+            # many intervals (or non-numpy/lazy data): single merge scan + gather
+            idx = _restrict(time_array, starts, ends)
+            new_t = time_array[idx]
+            data = None if values is None else values[idx]
+
+        # output timestamps are a sorted subset already within `iset`
+        with trusted_construction():
+            return self._define_instance(new_t, iset, values=data)
 
     def in_interval(self, iset):
         """
@@ -390,14 +417,20 @@ class _Base(abc.ABC):
         idx = _restrict(time_array, starts, ends)
         mask = np.zeros_like(time_array, dtype=bool)
         mask[idx] = True
-        return self._define_instance(time_array, self.time_support, values=mask)
+        # full (sorted) index over the object's own support
+        with trusted_construction():
+            return self._define_instance(time_array, self.time_support, values=mask)
 
     def copy(self):
         """Copy the data, index and time support"""
         data = getattr(self, "values", None)
         if data is not None:
             data = data.copy() if hasattr(data, "copy") else data[:].copy()
-        return self._define_instance(self.index.copy(), self.time_support, values=data)
+        # copying preserves the sorted, in-support index
+        with trusted_construction():
+            return self._define_instance(
+                self.index.copy(), self.time_support, values=data
+            )
 
     def find_support(self, min_gap, time_units="s"):
         """
@@ -436,6 +469,13 @@ class _Base(abc.ABC):
 
         By default, the time support doesn't change. If you want to change the time support, use the `restrict` function.
 
+        .. note::
+            When ``end`` is provided, this returns a **view** into the original
+            time series: the result shares the same underlying timestamp and data
+            arrays (no copy). Modifying the returned object in place will
+            therefore modify the original. Call ``.copy()`` if you need an
+            independent object, or use ``restrict`` (which always copies).
+
         Parameters
         ----------
         start : float or int
@@ -473,6 +513,11 @@ class _Base(abc.ABC):
         slice : slice
             A slice determining the start and end indices, with unit step
             Slicing the array will be equivalent to calling get: `ts[s].t == ts.get(start, end).t` with `s` being the slice object.
+
+        .. note::
+            Indexing a time series with the returned slice (like ``get``) yields
+            a **view** sharing the original's underlying arrays, not a copy;
+            in-place modification of the result modifies the original.
 
 
         Raises
