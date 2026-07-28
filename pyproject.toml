@@ -160,4 +160,7 @@ skip = '.git*,*.pdf,*.svg,versioneer.py,doc/_build,*.lock'
 check-hidden = true
 # Ignore embedded base64 images in notebooks
 ignore-regex = '^\s*"image/\S+": ".*'
-# ignore-words-list = ''
+# adn: Anterior Dorsal nucleus (neuroanatomy, see doc/examples/tutorial_HD_dataset.md)
+# countin: variable name in _jitted_functions.py meaning "count in"
+# nin: numpy ufunc attribute (ufunc.nin = number of inputs)
+ignore-words-list = 'adn,countin,nin'
