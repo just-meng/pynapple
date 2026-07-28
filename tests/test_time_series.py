@@ -641,7 +641,7 @@ class TestTimeSeriesGeneral:
                 tsd.convolve(np.ones(3), trim="a")
             assert (
                 str(e_info.value)
-                == "Unknow argument. trim should be 'both', 'left' or 'right'."
+                == "Unknown argument. trim should be 'both', 'left' or 'right'."
             )
 
             with pytest.raises(IOError) as e_info:

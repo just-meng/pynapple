@@ -158,7 +158,7 @@ print(tsgroup)
 ```
 
 ### Using attribute assignment
-If the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alpha-numeric characters and underscores), it can be set as an attribute (i.e. using a `.` followed by the metadata name).
+If the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alphanumeric characters and underscores), it can be set as an attribute (i.e. using a `.` followed by the metadata name).
 
 ```{code-cell} ipython3
 tsgroup.label=["MUA", "good", "good", "good"]

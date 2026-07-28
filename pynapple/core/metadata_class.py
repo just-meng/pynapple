@@ -636,7 +636,7 @@ class _Metadata(UserDict):
     @property
     def dtypes(self):
         """
-        Dictonary of data types for each metadata column.
+        Dictionary of data types for each metadata column.
         """
         return {k: self.data[k].dtype for k in self.columns}
 

@@ -775,7 +775,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         threshold : numeric
             Time threshold for "short" intervals
         time_units : None, optional
-            The time units for the treshold ('us', 'ms', 's' [default])
+            The time units for the threshold ('us', 'ms', 's' [default])
 
         Returns
         -------
@@ -796,7 +796,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         threshold : numeric
             Time threshold for "long" intervals
         time_units : None, optional
-            The time units for the treshold ('us', 'ms', 's' [default])
+            The time units for the threshold ('us', 'ms', 's' [default])
 
         Returns
         -------

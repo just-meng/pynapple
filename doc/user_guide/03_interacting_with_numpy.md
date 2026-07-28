@@ -23,7 +23,7 @@ import pynapple as nap
 import pandas as pd
 ```
 
-Multiple time series object are avaible depending on the shape of the data.
+Multiple time series object are available depending on the shape of the data.
 
 - `TsdTensor` : for data with of more than 2 dimensions, typically movies.
 - `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
@@ -69,7 +69,7 @@ print(tsdframe.as_dataframe())
 
 Attributes
 ----------
-The numpy array is accesible with the attributes `.values`, `.d` and functions [`as_array()`](pynapple.Tsd.as_array), [`to_numpy()`](pynapple.Tsd.to_numpy).
+The numpy array is accessible with the attributes `.values`, `.d` and functions [`as_array()`](pynapple.Tsd.as_array), [`to_numpy()`](pynapple.Tsd.to_numpy).
 The time index array is a `TsIndex` object accessible with `.index` or `.t`.
 `.shape` and `.ndim` are also accessible.
 
@@ -201,7 +201,7 @@ tsdframe = nap.TsdFrame(t=np.arange(5), d=np.random.randn(5, 3))
 print(np.concatenate((tsdframe, tsdframe), 1))
 ```
 
-Spliting
+Splitting
 --------
 Array split functions are also implemented
 

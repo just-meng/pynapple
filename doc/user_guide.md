@@ -61,7 +61,7 @@ Power spectral density <user_guide/10_power_spectral_density>
 
 ```{toctree}
 :maxdepth: 2
-Wavelet decomposion <user_guide/11_wavelets>
+Wavelet decomposition <user_guide/11_wavelets>
 ```
 
 ```{toctree}

@@ -65,7 +65,7 @@ class NPZFile(object):
         self.file = np.load(self.path, allow_pickle=True)
         type_ = ""
 
-        # First check if type is explicitely defined in the file:
+        # First check if type is explicitly defined in the file:
         try:
             type_ = self.file["type"][0]
             assert type_ in EXPECTED_ENTRIES.keys()
