@@ -202,7 +202,7 @@ print(np.concatenate((tsdframe, tsdframe), 1))
 ```
 
 Splitting
---------
+---------
 Array split functions are also implemented
 
 
