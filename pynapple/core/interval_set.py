@@ -962,7 +962,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     def split(self, interval_size, time_units="s"):
         """Split `IntervalSet` to a new `IntervalSet` with each interval being of size `interval_size`.
 
-        Used mostly for chunking very large dataset or looping throught multiple epoch of same duration.
+        Used mostly for chunking very large dataset or looping through multiple epoch of same duration.
 
         This function skips the epochs that are shorter than `interval_size`.
 

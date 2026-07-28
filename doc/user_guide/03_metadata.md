@@ -186,7 +186,7 @@ Single metadata columns (or lists of columns) can be retrieved using the [`get_i
 print(tsgroup.get_info("region"))
 ```
 
-Similarly, metadata can be accessed using key indexing (i.e. square brakets)
+Similarly, metadata can be accessed using key indexing (i.e. square brackets)
 
 ```{code-cell} ipython3
 print(tsgroup["region"])

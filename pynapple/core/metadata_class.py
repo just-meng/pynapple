@@ -251,7 +251,7 @@ class _MetadataMixin:
                 # metadata is a dictionary-like object
                 if (
                     hasattr(metadata, "index")
-                    # exlude length 1 objects in case of pandas.Series
+                    # exclude length 1 objects in case of pandas.Series
                     and (len(self.metadata_index) > 1)
                     and not np.all(self.metadata_index == metadata.index)
                 ):
