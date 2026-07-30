@@ -27,6 +27,20 @@ git clone https://github.com/<username>/pynapple.git
 git remote add upstream https://github.com/pynapple-org/pynapple
 ```
 
+## AI coding assistants
+
+If you contribute with [Claude Code](https://claude.com/claude-code), we maintain a skill that teaches it the
+conventions used throughout this codebase, which helps keep contributions consistent with the rest of the library:
+
+```
+/plugin marketplace add pynapple-org/claude-skills
+/plugin install using-pynapple@pynapple-skills
+/reload-plugins
+```
+
+If a pull request changes a public API signature, please also open an issue on
+[pynapple-org/claude-skills](https://github.com/pynapple-org/claude-skills/issues) so the skill can be kept in sync.
+
 ## Git workflow
 
 In general, we recommend developing changes on feature branches, and then opening a pull request against the `dev` branch for review.

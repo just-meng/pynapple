@@ -66,3 +66,34 @@ my_tsgroup = to_pynapple_tsgroup(
 
 my_tsgroup.save("my_tsgroup_output.npz")
 ```
+
+## Claude Code skills
+
+[claude-skills](https://github.com/pynapple-org/claude-skills) is a collection of
+[Claude Code](https://claude.com/claude-code) skills for pynapple, maintained by the pynapple developers.
+
+Large language models tend to write neurophysiology code the way they write pandas code: manual binning loops,
+`.loc` indexing, and time alignment done by hand. The `using-pynapple` skill teaches Claude the library's own
+idioms instead, covering:
+
+- the core data structures (`Ts`, `Tsd`, `TsdFrame`, `TsdTensor`, `TsGroup`, `IntervalSet`)
+- time series manipulation (`restrict`, `count`, `smooth`, `interpolate`, `bin_average`, `derivative`)
+- metadata filtering, tuning curves, and Bayesian and template decoding
+- signal processing (filtering, wavelets), correlograms and perievent analysis
+
+To install it, run the following in Claude Code:
+
+```
+/plugin marketplace add pynapple-org/claude-skills
+/plugin install using-pynapple@pynapple-skills
+/reload-plugins
+```
+
+The skill is invoked automatically whenever Claude detects that it is working with pynapple, so there is nothing
+else to do once it is installed.
+
+```{eval-rst}
+.. Note::
+	This repository derives from `catalystneuro/claude-skills <https://github.com/catalystneuro/claude-skills>`_,
+	which covers the broader neurophysiology ecosystem. The pynapple fork focuses solely on pynapple.
+```

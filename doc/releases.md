@@ -1,5 +1,10 @@
 # Releases
 
+### Unreleased
+
+- Added [pynapple-org/claude-skills](https://github.com/pynapple-org/claude-skills), a Claude Code skill that teaches AI coding assistants pynapple idioms. See [External Projects](external) for installation.
+
+
 ### 0.11.3 (2026-05-26)
 
 - Fixed `NeuroSuiteIO` channel indexing: `skip` and `groups` are now keyed by channel ID instead of sequential count, correcting channel ordering when IDs are non-contiguous.

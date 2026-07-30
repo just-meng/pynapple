@@ -60,6 +60,12 @@ pynapple: python neural analysis package
 
             Visualization (pynaviz)
 
+         .. button-link:: https://github.com/pynapple-org/claude-skills
+            :color: primary
+            :shadow:
+
+            Claude Code skills
+
 
 .. grid:: 1 1 6 6
     :gutter: 2
