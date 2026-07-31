@@ -257,7 +257,7 @@ plt.show()
 :::{card}
 Authors
 ^^^
-[Kipp Freud](https://kippfreud.com/)
+Kipp Freud
 
 Guillaume Viejo
 

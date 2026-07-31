@@ -37,6 +37,8 @@ import pynapple as nap
 
 To get started with pynapple, please read the [introduction](user_guide/01_introduction_to_pynapple) that introduces the minimal concepts.
 
+If you write code with an AI coding assistant, see the [Claude Code skills](external) that teach it pynapple idioms.
+
 ## Dependencies
 
 
