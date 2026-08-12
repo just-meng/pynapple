@@ -905,6 +905,30 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
                     )
 
 
+def test_compute_tuning_curves_named_columns():
+    """TsdFrame columns loaded from NWB carry the name "id", which xarray would
+    use as the coordinate dimension instead of "unit". See issue #624."""
+    t = np.arange(0, 100, 0.1)
+    data = nap.TsdFrame(
+        t=t,
+        d=np.random.rand(len(t), 3),
+        columns=pd.Index([0, 1, 2], name="id"),
+    )
+    features = nap.Tsd(t=t, d=t % 10)
+
+    tcs = nap.compute_tuning_curves(data, features, bins=10)
+    assert tcs.dims == ("unit", "0")
+    assert tcs.coords["unit"].dims == ("unit",)
+
+    epochs_dict = {
+        "ep0": nap.IntervalSet(start=0, end=50),
+        "ep1": nap.IntervalSet(start=50, end=100),
+    }
+    responses = nap.compute_response_per_epoch(data, epochs_dict)
+    assert responses.dims == ("unit", "epochs")
+    assert responses.coords["unit"].dims == ("unit",)
+
+
 # ------------------------------------------------------------------------------------
 # DISCRETE TUNING CURVE TESTS
 # ------------------------------------------------------------------------------------

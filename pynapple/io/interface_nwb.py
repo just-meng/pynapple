@@ -197,6 +197,43 @@ def _make_tsd_tensor(obj, lazy_loading=True):
     return data
 
 
+def _extract_dynamic_table_metadata(region):
+    """Helper function to extract metadata from a DynamicTableRegion
+
+    Columns holding one array per row (e.g. the `image_mask` of a
+    `PlaneSegmentation`) are skipped based on the table schema, so they are
+    never loaded only to be dropped. They can be orders of magnitude larger
+    than the metadata itself.
+
+    Parameters
+    ----------
+    region : hdmf.common.table.DynamicTableRegion
+        The `electrodes` of an ElectricalSeries or the `rois` of a
+        RoiResponseSeries.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per element of the region, indexed by table id.
+
+    """
+    vector_index = importlib.import_module("hdmf.common.table").VectorIndex
+
+    exclude = set()
+    for name in region.table.colnames:
+        column = region.table[name]
+        if isinstance(column, vector_index):  # ragged, e.g. pixel_mask
+            exclude.add(name)
+        elif len(column.data) and np.ndim(column.data[0]):  # e.g. image_mask
+            exclude.add(name)
+
+    return (
+        region.to_dataframe(exclude=exclude)
+        .convert_dtypes()
+        .select_dtypes(exclude="object")
+    )
+
+
 def _make_tsd_frame(obj, lazy_loading=True):
     """Helper function to make TsdFrame
 
@@ -235,11 +272,7 @@ def _make_tsd_frame(obj, lazy_loading=True):
     elif isinstance(obj, pynwb.ecephys.ElectricalSeries):
         # (channel mapping)
         try:
-            metadata = (
-                obj.electrodes.to_dataframe()
-                .convert_dtypes()
-                .select_dtypes(exclude="object")
-            )
+            metadata = _extract_dynamic_table_metadata(obj.electrodes)
             columns = metadata.index
         except Exception:
             columns = np.arange(obj.data.shape[1])
@@ -247,7 +280,8 @@ def _make_tsd_frame(obj, lazy_loading=True):
     elif isinstance(obj, pynwb.ophys.RoiResponseSeries):
         # (cell number)
         try:
-            columns = obj.rois["id"][:]
+            metadata = _extract_dynamic_table_metadata(obj.rois)
+            columns = metadata.index
         except Exception:
             columns = np.arange(obj.data.shape[1])
 
@@ -256,8 +290,12 @@ def _make_tsd_frame(obj, lazy_loading=True):
 
     if len(columns) >= d.shape[1]:  # Weird sometimes if background ID added
         columns = columns[0 : obj.data.shape[1]]
+        if len(metadata):
+            metadata = metadata.iloc[0 : obj.data.shape[1]]
     else:
+        # Columns fell back to a range index, so the metadata no longer applies
         columns = np.arange(obj.data.shape[1])
+        metadata = {}
 
     data = nap.TsdFrame(
         t=t,

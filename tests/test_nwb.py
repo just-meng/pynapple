@@ -455,6 +455,127 @@ def test_add_Ophys():
         pass  # some issues with pynwb version
 
 
+def _plane_segmentation(n_rois, name, ragged=False):
+    """Build a PlaneSegmentation with scalar columns next to an image_mask."""
+    from pynwb.ophys import PlaneSegmentation
+    from pynwb.testing.mock.ophys import mock_ImagingPlane
+
+    plane_segmentation = PlaneSegmentation(
+        description="plane segmentation",
+        imaging_plane=mock_ImagingPlane(),
+        name=name,
+    )
+    plane_segmentation.add_column(name="cell_id", description="cell id")
+    plane_segmentation.add_column(name="depth_um", description="depth")
+    if ragged:
+        plane_segmentation.add_column(name="ragged", description="ragged", index=True)
+
+    for i in range(n_rois):
+        extra = {"ragged": [1] * (i + 1)} if ragged else {}
+        plane_segmentation.add_roi(
+            image_mask=np.zeros((4, 4)), cell_id=i, depth_um=float(10 * i), **extra
+        )
+    return plane_segmentation
+
+
+def _roi_response_series(plane_segmentation, n_columns, n_rois=None, name="RRS"):
+    """RoiResponseSeries over `n_rois` rows of `plane_segmentation`."""
+    from hdmf.common.table import DynamicTableRegion
+    from pynwb.ophys import RoiResponseSeries
+
+    n_rois = len(plane_segmentation.id) if n_rois is None else n_rois
+    return RoiResponseSeries(
+        name=name,
+        data=np.ones((30, n_columns)),
+        unit="n.a.",
+        rate=1.0,
+        rois=DynamicTableRegion(
+            name="rois",
+            description="rois",
+            table=plane_segmentation,
+            data=list(range(n_rois)),
+        ),
+    )
+
+
+def test_add_Ophys_roi_metadata():
+    """RoiResponseSeries should carry the PlaneSegmentation columns as metadata.
+
+    See https://github.com/pynapple-org/pynapple/issues/620
+    """
+    pytest.importorskip("pynwb.testing.mock.ophys")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        name_generator_registry.clear()
+        plane_segmentation = _plane_segmentation(3, "PlaneSegmentation")
+        series = _roi_response_series(plane_segmentation, n_columns=3)
+        data = nap.io.interface_nwb._make_tsd_frame(series)
+
+        assert isinstance(data, nap.TsdFrame)
+        # the scalar columns are attached, the image mask is not
+        assert list(data.metadata.columns) == ["cell_id", "depth_um"]
+        np.testing.assert_array_equal(data.metadata["cell_id"].values, [0, 1, 2])
+        np.testing.assert_array_equal(
+            data.metadata["depth_um"].values, [0.0, 10.0, 20.0]
+        )
+        # columns still track the roi ids
+        np.testing.assert_array_equal(data.columns.values, series.rois["id"][:])
+
+
+def test_add_Ophys_roi_metadata_excludes_ragged():
+    """Ragged columns (e.g. pixel_mask) are skipped like image masks."""
+    pytest.importorskip("pynwb.testing.mock.ophys")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        name_generator_registry.clear()
+        plane_segmentation = _plane_segmentation(3, "PlaneSegmentation", ragged=True)
+        series = _roi_response_series(plane_segmentation, n_columns=3)
+        data = nap.io.interface_nwb._make_tsd_frame(series)
+
+        assert list(data.metadata.columns) == ["cell_id", "depth_um"]
+
+
+def test_add_Ophys_roi_metadata_extra_roi():
+    """Metadata is truncated with the columns when the region has extra rois."""
+    pytest.importorskip("pynwb.testing.mock.ophys")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        name_generator_registry.clear()
+        plane_segmentation = _plane_segmentation(4, "PlaneSegmentation")
+        # 4 rois in the region, but only 3 columns of data
+        series = _roi_response_series(plane_segmentation, n_columns=3, n_rois=4)
+        data = nap.io.interface_nwb._make_tsd_frame(series)
+
+        assert data.shape == (30, 3)
+        assert len(data.metadata) == 3
+        np.testing.assert_array_equal(data.metadata["cell_id"].values, [0, 1, 2])
+
+
+def test_add_Ophys_roi_metadata_only_image_mask():
+    """A PlaneSegmentation without scalar columns yields empty metadata."""
+    pytest.importorskip("pynwb.testing.mock.ophys")
+    from pynwb.testing.mock.ophys import mock_PlaneSegmentation, mock_RoiResponseSeries
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        name_generator_registry.clear()
+        series = mock_RoiResponseSeries(
+            plane_segmentation=mock_PlaneSegmentation(n_rois=5)
+        )
+        data = nap.io.interface_nwb._make_tsd_frame(series)
+
+        assert isinstance(data, nap.TsdFrame)
+        assert len(data.metadata.columns) == 0
+        np.testing.assert_array_equal(data.columns.values, series.rois["id"][:])
+
+
 def test_add_TimeIntervals():
     # 1 epochset
     nwbfile = mock_NWBFile()
