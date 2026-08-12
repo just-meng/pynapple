@@ -70,7 +70,7 @@ def load_file(path, lazy_loading=None):
 
 def load_folder(path):
     """Load folder containing files or other folder.
-    Pynapple will walk throught the subfolders to detect compatible npz files
+    Pynapple will walk through the subfolders to detect compatible npz files
     or nwb files.
 
     Parameters
@@ -191,7 +191,7 @@ def load_binary_file(
     Deleted Parameters
     ------------------
     extension : str, optional
-        The file extention (.eeg, .dat, .lfp). Make sure the frequency match
+        The file extension (.eeg, .dat, .lfp). Make sure the frequency match
 
     """
     # Need to check if a xml file exists

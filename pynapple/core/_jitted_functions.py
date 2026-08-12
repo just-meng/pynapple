@@ -579,7 +579,7 @@ def jitunion(start1, end1, start2, end2):
                 )  # end of interval is whichever occurs last
 
                 if end1[i] < end2[j]:
-                    i += 1  # incremet set 1 index if it ends first
+                    i += 1  # increment set 1 index if it ends first
                 else:
                     j += 1  # increment set 2 index if it ends first
 

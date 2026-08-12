@@ -153,3 +153,14 @@ omit = [
 ignore = ["E203", "E501", "W293", "E231", "W503", "C901", "W291", "E266"]
 max-complexity = 10
 exclude = ["doc", "__init__.py", "tests"]
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*,*.pdf,*.svg,versioneer.py,doc/_build,*.lock'
+check-hidden = true
+# Ignore embedded base64 images in notebooks
+ignore-regex = '^\s*"image/\S+": ".*'
+# adn: Anterior Dorsal nucleus (neuroanatomy, see doc/examples/tutorial_HD_dataset.md)
+# countin: variable name in _jitted_functions.py meaning "count in"
+# nin: numpy ufunc attribute (ufunc.nin = number of inputs)
+ignore-words-list = 'adn,countin,nin'

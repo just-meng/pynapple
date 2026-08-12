@@ -251,7 +251,7 @@ class _MetadataMixin:
                 # metadata is a dictionary-like object
                 if (
                     hasattr(metadata, "index")
-                    # exlude length 1 objects in case of pandas.Series
+                    # exclude length 1 objects in case of pandas.Series
                     and (len(self.metadata_index) > 1)
                     and not np.all(self.metadata_index == metadata.index)
                 ):
@@ -636,7 +636,7 @@ class _Metadata(UserDict):
     @property
     def dtypes(self):
         """
-        Dictonary of data types for each metadata column.
+        Dictionary of data types for each metadata column.
         """
         return {k: self.data[k].dtype for k in self.columns}
 

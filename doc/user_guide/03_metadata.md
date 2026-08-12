@@ -158,7 +158,7 @@ print(tsgroup)
 ```
 
 ### Using attribute assignment
-If the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alpha-numeric characters and underscores), it can be set as an attribute (i.e. using a `.` followed by the metadata name).
+If the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alphanumeric characters and underscores), it can be set as an attribute (i.e. using a `.` followed by the metadata name).
 
 ```{code-cell} ipython3
 tsgroup.label=["MUA", "good", "good", "good"]
@@ -186,7 +186,7 @@ Single metadata columns (or lists of columns) can be retrieved using the [`get_i
 print(tsgroup.get_info("region"))
 ```
 
-Similarly, metadata can be accessed using key indexing (i.e. square brakets)
+Similarly, metadata can be accessed using key indexing (i.e. square brackets)
 
 ```{code-cell} ipython3
 print(tsgroup["region"])

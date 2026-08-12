@@ -106,7 +106,7 @@ class BaseLoader(object):
         if len(position):
             position = pd.DataFrame.from_dict(position)
 
-            # retrieveing time support position if in epochs
+            # retrieving time support position if in epochs
             if "position_time_support" in nwbfile.intervals.keys():
                 epochs = nwbfile.intervals["position_time_support"].to_dataframe()
                 time_support = nap.IntervalSet(

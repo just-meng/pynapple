@@ -562,7 +562,7 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
             raise IOError("Array should be 1 or 2 dimension.")
 
         if trim not in ["both", "left", "right"]:
-            raise IOError("Unknow argument. trim should be 'both', 'left' or 'right'.")
+            raise IOError("Unknown argument. trim should be 'both', 'left' or 'right'.")
 
         time_array = self.index.values
         data_array = self.values
@@ -2511,7 +2511,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         xpos        10   20    30
         dtype: float64, shape: (5, 3)
 
-        To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
+        To add metadata with a keyword argument (pd.Series, numpy.ndarray, list or tuple):
 
         >>> ypos = pd.Series(index=tsdframe.columns, data = [10, 10, 10])
         >>> tsdframe.set_info(ypos=ypos)
