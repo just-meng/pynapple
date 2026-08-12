@@ -286,9 +286,16 @@ If you have Plexon files, you can use EphysReader in the exact same way:
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
-import urllib
-distantfile = "https://web.gin.g-node.org/NeuralEnsemble/ephy_testing_data/raw/master/plexon/File_plexon_3.plx"
-urllib.request.urlretrieve(distantfile, "File_plexon_3.plx")
+
+plexon_path = "File_plexon_3.plx"
+
+if plexon_path not in os.listdir("."):
+  r = requests.get(f"https://osf.io/2zvct/download", stream=True)
+  block_size = 1024*1024
+  with open(plexon_path, 'wb') as f:
+    for data in tqdm.tqdm(r.iter_content(block_size), unit='MB', unit_scale=True,
+      total=math.ceil(int(r.headers.get('content-length', 0))//block_size)):
+      f.write(data)
 ```
 
 ```{code-cell} ipython3
