@@ -265,7 +265,10 @@ def compute_tuning_curves(
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
 
     # tuning curves
-    keys = (
+    # np.asarray drops any name carried by a pandas Index (TsdFrame.columns
+    # loaded from NWB is named "id"), which xarray would otherwise use as the
+    # coordinate dimension instead of "unit".
+    keys = np.asarray(
         data.keys()
         if isinstance(data, nap.TsGroup)
         else data.columns if isinstance(data, nap.TsdFrame) else [0]
@@ -402,7 +405,8 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
         raise TypeError("return_pandas should be a boolean.")
 
     # tuning curves
-    keys = (
+    # See compute_tuning_curves: np.asarray drops the pandas Index name.
+    keys = np.asarray(
         data.keys()
         if isinstance(data, nap.TsGroup)
         else data.columns if isinstance(data, nap.TsdFrame) else [0]
