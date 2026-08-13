@@ -14,6 +14,7 @@ pynapple: python neural analysis package
    API <api>
    External projects <external>
    About us <about>
+   Learning material <learning_material>
    Releases <releases>
    GPU acceleration <pynajax>
    Citing <citing>
