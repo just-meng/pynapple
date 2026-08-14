@@ -533,6 +533,10 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
 
         The only mode supported is full. The returned object is trimmed to match the size of the original object. The parameter trim controls which side the trimming operates. Default is 'both'.
 
+        The signal is zero-padded outside of each epoch. A warning is raised if the kernel is
+        longer than the number of samples of one of the epochs as the output is then entirely
+        determined by the padding.
+
         See the numpy documentation here : https://numpy.org/doc/stable/reference/generated/numpy.convolve.html
 
         Parameters
@@ -549,6 +553,14 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
         -------
         Tsd, TsdFrame or TsdTensor
             The convolved time series
+        """
+        return self._convolve_kernel(array, ep=ep, trim=trim, stacklevel=3)
+
+    def _convolve_kernel(self, array, ep=None, trim="both", stacklevel=3):
+        """Implementation of `convolve`.
+
+        `stacklevel` is passed to the warning raised when the kernel is longer than an epoch,
+        so that it points to the caller of the public method (`convolve` or `smooth`).
         """
         if not is_array_like(array):
             raise IOError(
@@ -579,6 +591,21 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
             idx = _restrict(time_array, starts, ends)
             time_array = time_array[idx]
             data_array = data_array[idx]
+
+        n_samples = np.searchsorted(time_array, ends, side="right") - np.searchsorted(
+            time_array, starts
+        )
+        too_short = n_samples < len(array)
+        if np.any(too_short):
+            warnings.warn(
+                f"Kernel size ({len(array)} samples) is larger than the number of samples in "
+                f"{np.sum(too_short)} out of {len(n_samples)} epochs (shortest epoch has "
+                f"{n_samples.min()} samples). The signal is zero-padded outside each epoch, so "
+                "every point of the output in those epochs is contaminated by the padding and "
+                "artifacts are expected. Consider decreasing the kernel/window size.",
+                UserWarning,
+                stacklevel=stacklevel,
+            )
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
@@ -618,6 +645,10 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
             >>> tsd.convolve(window)  # doctest: +SKIP
 
         It is generally a good idea to visualize the kernel before applying any convolution.
+
+        The signal is zero-padded outside of each epoch. A warning is raised if the gaussian
+        window is longer than the number of samples of one of the epochs. `windowsize` and
+        `size_factor` can be decreased to reduce the size of the window.
 
         See the scipy documentation for the [gaussian window](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.windows.gaussian.html)
 
@@ -673,7 +704,7 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
         if norm:
             window = window / window.sum()
 
-        return self.convolve(window)
+        return self._convolve_kernel(window, stacklevel=3)
 
     def decimate(self, down, order=8, filter_type="iir", ep=None):
         """
