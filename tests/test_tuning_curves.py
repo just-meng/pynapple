@@ -277,6 +277,30 @@ def get_features_n(n, fs=10.0):
             {"feature_names": ("feature0", "feature1")},
             does_not_raise(),
         ),
+        # bins
+        pytest.param(
+            get_group_n(1),
+            get_features_n(1),
+            {"bins": np.linspace(0, 10, 6)},
+            pytest.raises(
+                ValueError,
+                match=(
+                    r"bins should contain one specification per feature "
+                    r"\(expected 1, got 6\).*bins=\[bin_edges\]"
+                ),
+            ),
+            id="bins-explicit-edges-not-wrapped",
+        ),
+        pytest.param(
+            get_group_n(1),
+            get_features_n(2),
+            {"bins": [5]},
+            pytest.raises(
+                ValueError,
+                match=r"bins should contain one specification per feature \(expected 2, got 1\)",
+            ),
+            id="bins-wrong-feature-count",
+        ),
         # return_pandas
         (
             get_group_n(1),

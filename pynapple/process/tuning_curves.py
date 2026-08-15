@@ -221,6 +221,20 @@ def compute_tuning_curves(
         ):
             raise ValueError("feature_names should match the number of features.")
 
+    # check bins
+    try:
+        n_bin_specs = len(bins)
+    except TypeError:
+        n_bin_specs = None
+    n_features = 1 if features.ndim == 1 else features.shape[1]
+    if n_bin_specs is not None and n_bin_specs != n_features:
+        raise ValueError(
+            "bins should contain one specification per feature "
+            f"(expected {n_features}, got {n_bin_specs}). To use explicit bin "
+            "edges, pass one array per feature (for example, "
+            "bins=[bin_edges] for a single feature)."
+        )
+
     # check epochs
     if epochs is None:
         epochs = features.time_support
