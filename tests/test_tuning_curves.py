@@ -282,14 +282,15 @@ def get_features_n(n, fs=10.0):
             get_group_n(1),
             get_features_n(1),
             {"bins": np.linspace(0, 10, 6)},
-            pytest.raises(
-                ValueError,
-                match=(
-                    r"bins should contain one specification per feature "
-                    r"\(expected 1, got 6\).*bins=\[bin_edges\]"
-                ),
-            ),
-            id="bins-explicit-edges-not-wrapped",
+            does_not_raise(),
+            id="bins-explicit-edges-array",
+        ),
+        pytest.param(
+            get_group_n(1),
+            get_features_n(1),
+            {"bins": [0, 2, 4, 6, 8, 10]},
+            does_not_raise(),
+            id="bins-explicit-edges-list",
         ),
         pytest.param(
             get_group_n(1),
