@@ -130,6 +130,8 @@ html_context = {
 
 html_sidebars = {
     "index": [],
+    # This page has no sub-pages to navigate, so show its own sections instead.
+    "learning_material": ["search-field.html", "page-toc.html"],
     "installing": [],
     "about": [],
     "releases": [],
