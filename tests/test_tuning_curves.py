@@ -930,6 +930,21 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
                     )
 
 
+@pytest.mark.parametrize(
+    "bins",
+    [np.linspace(0, 10, 6), [0, 2, 4, 6, 8, 10]],
+    ids=["array", "list"],
+)
+def test_compute_tuning_curves_single_feature_direct_bins(bins):
+    data = get_group_n(1)
+    features = get_features_n(1)
+
+    direct = nap.compute_tuning_curves(data, features, bins=bins)
+    wrapped = nap.compute_tuning_curves(data, features, bins=[bins])
+
+    xr.testing.assert_equal(direct, wrapped)
+
+
 def test_compute_tuning_curves_named_columns():
     """TsdFrame columns loaded from NWB carry the name "id", which xarray would
     use as the coordinate dimension instead of "unit". See issue #624."""
