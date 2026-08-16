@@ -88,12 +88,17 @@ If you made your own teaching material and think it could help others learn to u
 | Learning the fundamentals of Pynapple | web page | Guillaume Viejo | [link](https://flatironinstitute.github.io/neurorse-workshops/workshops/feb-2026/branch/main/full/live_coding/01_fundamentals_of_pynapple.html) |
 | Analyzing head-direction cells with Pynapple | web page | Guillaume Viejo | [link](https://flatironinstitute.github.io/neurorse-workshops/workshops/feb-2026/branch/main/users/group_projects/01_head_direction-users.html) |
 | Calcium imaging analysis of head-direction cells | web page | Guillaume Viejo | [link](https://flatironinstitute.github.io/neurorse-workshops/workshops/feb-2026/branch/main/users/group_projects/03_calcium_imaging_analysis-users.html) |
-| Analyzing hippocampal place cells with Pynapple and NeMoS | web page | Guillaume Viejo | [link](https://flatironinstitute.github.io/neurorse-workshops/workshops/feb-2026/branch/main/users/group_projects/04_place_cells-users.html) |
+| Analyzing hippocampal place cells with Pynapple and NeMoS | web page | Sarah Jo Venditto | [link](https://flatironinstitute.github.io/neurorse-workshops/workshops/feb-2026/branch/main/users/group_projects/04_place_cells-users.html) |
 | Exploring the Allen Institute’s Visual Coding dataset | web page | Guillaume Viejo | [link](https://flatironinstitute.github.io/neurorse-workshops/workshops/feb-2026/branch/main/users/group_projects/05_visual_coding-users.html) |
-| Pynapple & NeMoS Cheat Sheet | cheat sheet | Guillaume Viejo | [link](https://flatironinstitute.github.io/neurorse-workshops/workshops/feb-2026/branch/main/_downloads/06faf07e60fcc887150dde0291f9610e/Feb_2026_workshop_cheatsheet.pdf) |
+| Pynapple & NeMoS Cheat Sheet | cheat sheet | Aramis Tanelus | [link](https://flatironinstitute.github.io/neurorse-workshops/workshops/feb-2026/branch/main/_downloads/06faf07e60fcc887150dde0291f9610e/Feb_2026_workshop_cheatsheet.pdf) |
 | Data wrangling, 1D neural tuning, and model fitting | notebook | Sarah Jo Venditto | [link](https://colab.research.google.com/drive/1V0t7uE0nJels52r6BLYFhs5XRrG2UvsY) | 
 | Signal processing | notebook | Sarah Jo Venditto | [link](https://colab.research.google.com/drive/1hlszOxRzIuoGsn-aO8PcEJ6m8mjukt8d) | 
 | 2D neural tuning and model fitting | notebook | Sarah Jo Venditto | [link](https://colab.research.google.com/drive/1GcFV6rAU0xBWWYe6IsjBlRAFqwToAQ9J) | 
 | Neural decoding | notebook | Sarah Jo Venditto | [link](https://colab.research.google.com/drive/1T1ewqbuSuXB06BlETSMSVSQDukZwX093) | 
 | An introduction to Pynapple | web page | Wolf De Wulf | [link](https://wulfdewolf.github.io/pynapple-intro/) | 
-| Fitting GLMs to neural data using NeMoS | web page | Edoardo Balzani | [link](https://nemos.readthedocs.io/en/latest/tutorials/README.html) |
+| Fitting injected currents using GLMs | web page | Edoardo Balzani | [link](https://nemos.readthedocs.io/en/latest/tutorials/plot_01_current_injection.html) |
+| Fitting a head direction population using GLMs | web page | Edoardo Balzani | [link](https://nemos.readthedocs.io/en/latest/tutorials/plot_02_head_direction.html) |
+| Fitting grid cells using GLMs | web page | Edoardo Balzani | [link](https://nemos.readthedocs.io/en/latest/tutorials/plot_03_grid_cells.html) |
+| Fitting place cells using GLMs | web page | Edoardo Balzani | [link](https://nemos.readthedocs.io/en/latest/tutorials/plot_05_place_cells.html) |
+| Fitting V1 cells using GLMs | web page | Edoardo Balzani | [link](https://nemos.readthedocs.io/en/latest/tutorials/plot_04_v1_cells.html) |
+| Fitting calcium imaging using GLMs | web page | Edoardo Balzani | [link](https://nemos.readthedocs.io/en/latest/tutorials/plot_06_calcium_imaging.html) |
