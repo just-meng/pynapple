@@ -11,6 +11,20 @@ html[data-theme=light]{
   --pst-color-inline-code: rgb(96, 141, 130);
 }
 
+/* Figure previews in the "Curated examples" cards */
+img.example-thumb {
+  width: 100%;
+  /* cap the preview so it stays a thumbnail on wide screens */
+  max-width: 360px;
+  height: auto;
+  /* keep it against the right edge of the card */
+  margin-left: auto;
+  display: block;
+  border-radius: 0px;
+  /* matplotlib figures are rendered on white, so keep that backing in dark mode */
+  background-color: white;
+}
+
 :root {
   --pst-font-size-h1: 38px;
   --pst-font-size-h2: 32px;
