@@ -932,8 +932,8 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
 
 @pytest.mark.parametrize(
     "bins",
-    [np.linspace(0, 10, 6), [0, 2, 4, 6, 8, 10]],
-    ids=["array", "list"],
+    [np.linspace(0, 10, 6), [0, 2, 4, 6, 8, 10], (0, 2, 4, 6, 8, 10)],
+    ids=["array", "list", "tuple"],
 )
 def test_compute_tuning_curves_single_feature_direct_bins(bins):
     data = get_group_n(1)

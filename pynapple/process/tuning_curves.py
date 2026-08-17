@@ -224,19 +224,7 @@ def compute_tuning_curves(
 
     # check bins
     n_features = 1 if features.ndim == 1 else features.shape[1]
-    if (
-        n_features == 1
-        and isinstance(bins, np.ndarray)
-        and bins.ndim == 1
-        and len(bins) > 1
-    ):
-        bins = [bins]
-    elif (
-        n_features == 1
-        and isinstance(bins, (list, tuple))
-        and len(bins) > 1
-        and all(np.isscalar(bin_spec) for bin_spec in bins)
-    ):
+    if n_features == 1 and np.ndim(bins) == 1 and len(bins) > 1:
         bins = [bins]
     try:
         n_bin_specs = len(bins)
