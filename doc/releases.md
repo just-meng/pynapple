@@ -2,7 +2,20 @@
 
 ### Unreleased
 
-- Added [pynapple-org/claude-skills](https://github.com/pynapple-org/claude-skills), a Claude Code skill that teaches AI coding assistants pynapple idioms. See [External Projects](external) for installation.
+
+### 0.11.4 (2026-08-19)
+
+- Major speed-up of `restrict` and object reconstruction: internal operations that provably return a sorted, in-support index skip revalidation, and `restrict` uses `searchsorted`. At 10M samples, `restrict` 33 ms -> 2.8 ms, `get` 15 ms -> 12 us.
+- `compute_tuning_curves` accepts bin edges directly for a single feature, and errors when the number of bin specifications does not match the number of features.
+- New [Learning material](learning_material) page collecting workshop and summer school material.
+- `convolve` and `smooth` now warn when the kernel is longer than an epoch, where the output is entirely determined by the zero-padding.
+- NWB loader attaches `rois` metadata to `TsdFrame` from a `RoiResponseSeries`, skipping per-row array columns (`image_mask`, `pixel_mask`).
+- `IntervalSet` drops rows with `NaN` start or end times at initialization, with a warning.
+- `NeuroSuiteIO` XML parsing no longer fails on a missing `units` section or empty `nSamples`, `nFeatures`, `peakSampleIndex` fields.
+- Fixed tuning curves carrying the pandas index name (e.g. `id`) into the xarray coordinate instead of `unit`.
+- Added a `codespell` tox environment and CI workflow, plus typo fixes throughout.
+- Added Python 3.12 to the tox test matrix.
+- Added [pynapple-org/claude-skills](https://github.com/pynapple-org/claude-skills), a Claude Code skill teaching pynapple idioms to AI coding assistants. See [External Projects](external).
 
 
 ### 0.11.3 (2026-05-26)
