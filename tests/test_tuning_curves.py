@@ -277,6 +277,17 @@ def get_features_n(n, fs=10.0):
             {"feature_names": ("feature0", "feature1")},
             does_not_raise(),
         ),
+        # bins
+        pytest.param(
+            get_group_n(1),
+            get_features_n(2),
+            {"bins": [5]},
+            pytest.raises(
+                ValueError,
+                match=r"bins should contain one specification per feature \(expected 2, got 1\)",
+            ),
+            id="bins-wrong-feature-count",
+        ),
         # return_pandas
         (
             get_group_n(1),
@@ -903,6 +914,77 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
                     np.testing.assert_array_almost_equal(
                         tcs.attrs[attribute][i], expectation.attrs[attribute][i]
                     )
+
+
+@pytest.mark.parametrize(
+    "n_features,bins,expected_bin_counts",
+    [
+        pytest.param(1, 5, (5,), id="scalar-one-feature"),
+        pytest.param(2, 5, (5, 5), id="scalar-all-features"),
+        pytest.param(1, [5], (5,), id="list-one-feature"),
+        pytest.param(2, [5, 4], (5, 4), id="list-per-feature"),
+        pytest.param(2, (5, 4), (5, 4), id="tuple-per-feature"),
+        pytest.param(
+            2,
+            np.array([5, 4]),
+            (5, 4),
+            id="array-per-feature",
+        ),
+        pytest.param(
+            2,
+            [5, np.linspace(0, 20, 5)],
+            (5, 4),
+            id="mixed-count-and-edges",
+        ),
+    ],
+)
+def test_compute_tuning_curves_bin_counts(n_features, bins, expected_bin_counts):
+    data = get_group_n(1)
+    features = get_features_n(n_features)
+
+    tuning_curves = nap.compute_tuning_curves(data, features, bins=bins)
+
+    assert tuning_curves.shape[1:] == expected_bin_counts
+    assert (
+        tuple(len(edges) - 1 for edges in tuning_curves.attrs["bin_edges"])
+        == expected_bin_counts
+    )
+
+
+@pytest.mark.parametrize(
+    "n_features,bins",
+    [
+        pytest.param(1, np.linspace(0, 10, 6), id="direct-array"),
+        pytest.param(1, [0, 2, 4, 6, 8, 10], id="direct-list"),
+        pytest.param(1, (0, 2, 4, 6, 8, 10), id="direct-tuple"),
+        pytest.param(1, [np.linspace(0, 10, 6)], id="wrapped-list"),
+        pytest.param(1, (np.linspace(0, 10, 6),), id="wrapped-tuple"),
+        pytest.param(
+            2,
+            [np.linspace(0, 10, 6), np.linspace(0, 20, 6)],
+            id="per-feature-list",
+        ),
+        pytest.param(
+            2,
+            (np.linspace(0, 10, 6), np.linspace(0, 20, 6)),
+            id="per-feature-tuple",
+        ),
+        pytest.param(
+            2,
+            np.array([np.linspace(0, 10, 6), np.linspace(0, 20, 6)]),
+            id="per-feature-array",
+        ),
+    ],
+)
+def test_compute_tuning_curves_explicit_bin_edges(n_features, bins):
+    data = get_group_n(1)
+    features = get_features_n(n_features)
+
+    tuning_curves = nap.compute_tuning_curves(data, features, bins=bins)
+
+    assert tuning_curves.shape[1:] == (5,) * n_features
+    for dimension, edges in enumerate(tuning_curves.attrs["bin_edges"], start=1):
+        np.testing.assert_array_equal(edges, np.linspace(0, 10 * dimension, 6))
 
 
 def test_compute_tuning_curves_named_columns():

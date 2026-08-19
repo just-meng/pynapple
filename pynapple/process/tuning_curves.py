@@ -50,7 +50,8 @@ def compute_tuning_curves(
         The bin specification:
 
         * A sequence of arrays describing the monotonically increasing bin
-          edges along each dimension.
+          edges along each dimension. For a single feature, the edge sequence
+          can be passed directly without wrapping it in another sequence.
         * The number of bins for each dimension (nx, ny, ... =bins)
         * The number of bins for all dimensions (nx=ny=...=bins).
     range : sequence, optional
@@ -220,6 +221,21 @@ def compute_tuning_curves(
             1 if isinstance(features, nap.Tsd) else features.shape[-1]
         ):
             raise ValueError("feature_names should match the number of features.")
+
+    # check bins
+    n_features = 1 if features.ndim == 1 else features.shape[1]
+    if n_features == 1 and np.ndim(bins) == 1 and len(bins) > 1:
+        bins = [bins]
+    try:
+        n_bin_specs = len(bins)
+    except TypeError:
+        n_bin_specs = None
+    if n_bin_specs is not None and n_bin_specs != n_features:
+        raise ValueError(
+            "bins should contain one specification per feature "
+            f"(expected {n_features}, got {n_bin_specs}). To use explicit bin "
+            "edges with multiple features, pass one array per feature."
+        )
 
     # check epochs
     if epochs is None:
