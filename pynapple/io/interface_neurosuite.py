@@ -181,9 +181,19 @@ def parse_neuroscope_xml(xml_path):
         spike_groups.append(
             {
                 "channels": channels,
-                "n_samples": int(_text(group, "nSamples")) if _text(group, "nSamples") else None,
-                "n_features": int(_text(group, "nFeatures")) if _text(group, "nFeatures") else None,
-                "peak_sample_index": int(_text(group, "peakSampleIndex")) if _text(group, "peakSampleIndex") else None,
+                "n_samples": (
+                    int(_text(group, "nSamples")) if _text(group, "nSamples") else None
+                ),
+                "n_features": (
+                    int(_text(group, "nFeatures"))
+                    if _text(group, "nFeatures")
+                    else None
+                ),
+                "peak_sample_index": (
+                    int(_text(group, "peakSampleIndex"))
+                    if _text(group, "peakSampleIndex")
+                    else None
+                ),
             }
         )
 
