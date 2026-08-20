@@ -360,7 +360,7 @@ Those events are called sharp-waves ripples, take a look at [the tutorial on sha
 :::{card}
 Authors
 ^^^
-[Kipp Freud](https://kippfreud.com/)
+Kipp Freud
 
 Guillaume Viejo
 

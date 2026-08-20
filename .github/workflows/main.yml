@@ -11,6 +11,12 @@ on:
       - reopened
       - synchronize
       - ready_for_review
+  workflow_dispatch:
+    inputs:
+      debug_tmate:
+        description: 'Open a tmate session if the documentation build fails'
+        type: boolean
+        default: false
 
 jobs:
   lint:
@@ -82,9 +88,13 @@ jobs:
         run: |          
           cd doc
           make html
+      # Only on a manual run with debug_tmate enabled: on pull_request this
+      # input is empty, so a failed build fails fast instead of holding the
+      # runner open until the 6h job limit.
       - name: Start tmate session for debugging
-        if: failure()
+        if: failure() && inputs.debug_tmate
         uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
 
       - name: Install markdown-link-check
         run: npm install -g markdown-link-check
@@ -102,7 +112,7 @@ jobs:
             --ignore-urls "https://fonts.gstatic.com,/scikit-learn\.org/,https://mkdocs-gallery.github.io,./doc/_build/html/_static/,https://www.nature.com/articles/s41593-022-01020-w,https://elifesciences.org/reviewed-preprints/85786" 
             --assume-extension 
             --check-external-hash 
-            --ignore-status-codes 403,0 
+            --ignore-status-codes 403,0,429,503
             --ignore-files "/.+\/html\/_static\/.+/"
           # The arguments to pass to HTMLProofer
 

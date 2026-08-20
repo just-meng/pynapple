@@ -24,7 +24,7 @@ def compute_event_triggered_average(
     Notes
     -----
     If `C` is the event count matrix and ``feature`` is a `Tsd`, then the function computes
-    the Hankel matrix H from ``window=(-t1,+t2)`` by offseting the `Tsd`.
+    the Hankel matrix H from ``window=(-t1,+t2)`` by offsetting the `Tsd`.
     The ETA is then defined as the dot product between `H` and `C` divided by the number of events.
 
     Parameters

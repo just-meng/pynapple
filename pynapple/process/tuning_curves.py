@@ -25,7 +25,18 @@ def compute_tuning_curves(
     return_counts=False,
 ):
     """
-    Computes n-dimensional tuning curves relative to n features.
+    Compute n-dimensional tuning curves describing how `data` varies as a
+    function of one or more `features`.
+
+    A tuning curve quantifies the relationship between a signal (e.g. neuronal
+    spike rate or a continuous measurement) and one or more explanatory
+    variables such as position, head direction, or speed. The feature space is
+    discretised into bins, the data are accumulated within each bin, and the
+    result is normalised by the occupancy of each bin (unless
+    `return_counts=True`).
+
+    If `epochs` is not provided, the tuning curves are computed over the time
+    support of `features`.
 
     Parameters
     ----------
@@ -39,7 +50,8 @@ def compute_tuning_curves(
         The bin specification:
 
         * A sequence of arrays describing the monotonically increasing bin
-          edges along each dimension.
+          edges along each dimension. For a single feature, the edge sequence
+          can be passed directly without wrapping it in another sequence.
         * The number of bins for each dimension (nx, ny, ... =bins)
         * The number of bins for all dimensions (nx=ny=...=bins).
     range : sequence, optional
@@ -210,6 +222,21 @@ def compute_tuning_curves(
         ):
             raise ValueError("feature_names should match the number of features.")
 
+    # check bins
+    n_features = 1 if features.ndim == 1 else features.shape[1]
+    if n_features == 1 and np.ndim(bins) == 1 and len(bins) > 1:
+        bins = [bins]
+    try:
+        n_bin_specs = len(bins)
+    except TypeError:
+        n_bin_specs = None
+    if n_bin_specs is not None and n_bin_specs != n_features:
+        raise ValueError(
+            "bins should contain one specification per feature "
+            f"(expected {n_features}, got {n_bin_specs}). To use explicit bin "
+            "edges with multiple features, pass one array per feature."
+        )
+
     # check epochs
     if epochs is None:
         epochs = features.time_support
@@ -254,7 +281,10 @@ def compute_tuning_curves(
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
 
     # tuning curves
-    keys = (
+    # np.asarray drops any name carried by a pandas Index (TsdFrame.columns
+    # loaded from NWB is named "id"), which xarray would otherwise use as the
+    # coordinate dimension instead of "unit".
+    keys = np.asarray(
         data.keys()
         if isinstance(data, nap.TsGroup)
         else data.columns if isinstance(data, nap.TsdFrame) else [0]
@@ -391,7 +421,8 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
         raise TypeError("return_pandas should be a boolean.")
 
     # tuning curves
-    keys = (
+    # See compute_tuning_curves: np.asarray drops the pandas Index name.
+    keys = np.asarray(
         data.keys()
         if isinstance(data, nap.TsGroup)
         else data.columns if isinstance(data, nap.TsdFrame) else [0]

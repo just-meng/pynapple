@@ -35,7 +35,7 @@ from ._core_functions import (
 from .base_class import _Base
 from .interval_set import IntervalSet
 from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
-from .time_index import TsIndex
+from .time_index import TsIndex, is_trusted_construction, trusted_construction
 from .utils import (
     _concatenate_tsd,
     _convert_iter_to_str,
@@ -68,6 +68,23 @@ def _get_class(data):
         return TsdFrame
     else:
         return TsdTensor
+
+
+def _index_preserves_order(key):
+    """Return True if indexing the time axis with ``key`` cannot reorder the
+    timestamps (so the result stays sorted).
+
+    Only positive-step slices and boolean masks are guaranteed order-preserving.
+    Integer / integer-array fancy indexing may reorder, so it is treated as
+    unsafe (the result is validated the usual way).
+    """
+    if isinstance(key, tuple):
+        key = key[0] if len(key) else slice(None)
+    if isinstance(key, slice):
+        return key.step is None or key.step > 0
+    if isinstance(key, np.ndarray):
+        return key.dtype == np.bool_
+    return False
 
 
 def _initialize_tsd_output(
@@ -119,6 +136,15 @@ def _initialize_tsd_output(
     """
     kwargs = kwargs if kwargs is not None else {}
 
+    if values is None:
+        # value-less time series (only Ts): the output class is taken from the
+        # source object since there is no data array whose ndim we can inspect.
+        time_index = input_object.index if time_index is None else time_index
+        time_support = (
+            input_object.time_support if time_support is None else time_support
+        )
+        return type(input_object)(t=time_index, time_support=time_support)
+
     if isinstance(values, np.ndarray) or is_array_like(values):
         # if time and ep are passed use them, otherwise strip from inp
         time_index = input_object.index if time_index is None else time_index
@@ -161,7 +187,33 @@ def _initialize_tsd_output(
     return values
 
 
-class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
+class _ReconstructMixin:
+    """Bridge from the generic algorithms in :mod:`base_class` to the single
+    construction funnel.
+
+    ``base_class`` cannot import :func:`_initialize_tsd_output` (that would close
+    an import cycle with this module), so the generic algorithms reach the funnel
+    through this polymorphic seam: ``self._define_instance(...)`` resolves here,
+    where the funnel and the concrete classes are in scope.
+    """
+
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
+        """Return a new class instance via the construction funnel.
+
+        The output class is inferred from ``values`` (or is a ``Ts`` when
+        ``values`` is None). "columns", "metadata" and other attributes of self
+        are propagated to the new instance unless specified in kwargs.
+        """
+        return _initialize_tsd_output(
+            self,
+            values,
+            time_index=time_index,
+            time_support=time_support,
+            kwargs=kwargs,
+        )
+
+
+class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
     """
     Abstract base class for time series objects.
     Implement most of the shared functions across concrete classes `Tsd`, `TsdFrame`, `TsdTensor`
@@ -189,34 +241,39 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             self.values.shape[0], len(self.index)
         )
 
-        if isinstance(time_support, IntervalSet) and len(self.index):
+        # Clip data to time_support (drop samples outside it). Skipped entirely
+        # under trusted construction. Otherwise validation-preserving fast paths
+        # avoid needless O(n) work:
+        #   - obvious no-op: a single interval already covering all timestamps;
+        #   - general no-op: the scan finds nothing outside the support, so
+        #     index/values/rate from _Base are already correct;
+        #   - a real clip rebuilds the index as trusted, since the clipped
+        #     timestamps are a sorted float64 subset (no re-sort / re-cast).
+        if (
+            isinstance(time_support, IntervalSet)
+            and len(self.index)
+            and not is_trusted_construction()
+        ):
             starts = time_support.start
             ends = time_support.end
-            idx = _restrict(self.index.values, starts, ends)
-            t = self.index.values[idx]
-            d = self.values[idx]
+            time_array = self.index.values
 
-            self.index = TsIndex(t)
-            self.values = d
-            self.rate = self.index.shape[0] / np.sum(
-                time_support.values[:, 1] - time_support.values[:, 0]
+            covers_all = (
+                len(starts) == 1
+                and starts[0] <= time_array[0]
+                and time_array[-1] <= ends[0]
             )
+            if not covers_all:
+                idx = _restrict(time_array, starts, ends)
+                if len(idx) != len(time_array):
+                    with trusted_construction():
+                        self.index = TsIndex(time_array[idx])
+                    self.values = self.values[idx]
+                    self.rate = self.index.shape[0] / np.sum(
+                        time_support.values[:, 1] - time_support.values[:, 0]
+                    )
 
         self.dtype = self.values.dtype
-
-    def _define_instance(self, time_index, time_support, values=None, **kwargs):
-        """
-        Define a new class instance.
-
-        Optional parameters for initialization are either passed to the function or are grabbed from self.
-        """
-        return _initialize_tsd_output(
-            self,
-            values,
-            time_index=time_index,
-            time_support=time_support,
-            kwargs=kwargs,
-        )
 
     def __setitem__(self, key, value):
         """setter for time series"""
@@ -277,7 +334,9 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             else:
                 out = ufunc(*new_args, **kwargs)
 
-            return _initialize_tsd_output(self, out)
+            # elementwise: the time index is unchanged (sorted, in-support)
+            with trusted_construction():
+                return _initialize_tsd_output(self, out)
         else:
             return NotImplemented
 
@@ -331,13 +390,15 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         if modifies_time_axis(func, new_args, kwargs):
             return out
         else:
-            if hasattr(out, "shape") and self.shape == out.shape:
-                return _initialize_tsd_output(self, out)
-            else:
-                try:
-                    return _initialize_tsd_output(self, out, drop_metadata=True)
-                except Exception:
+            # time axis unchanged: reuse self's (sorted, in-support) index
+            with trusted_construction():
+                if hasattr(out, "shape") and self.shape == out.shape:
                     return _initialize_tsd_output(self, out)
+                else:
+                    try:
+                        return _initialize_tsd_output(self, out, drop_metadata=True)
+                    except Exception:
+                        return _initialize_tsd_output(self, out)
 
     def as_array(self):
         """
@@ -422,7 +483,9 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
+        # bin centers are sorted and within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
 
     def dropna(self, update_time_support=True):
         """Drop every row containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
@@ -457,7 +520,9 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             ep = self.time_support
 
-        return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
+        # non-NaN rows are a sorted subset within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -467,6 +532,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         This function assume a constant sampling rate of the time series.
 
         The only mode supported is full. The returned object is trimmed to match the size of the original object. The parameter trim controls which side the trimming operates. Default is 'both'.
+
+        The signal is zero-padded outside of each epoch. A warning is raised if the kernel is
+        longer than the number of samples of one of the epochs as the output is then entirely
+        determined by the padding.
 
         See the numpy documentation here : https://numpy.org/doc/stable/reference/generated/numpy.convolve.html
 
@@ -485,6 +554,14 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         Tsd, TsdFrame or TsdTensor
             The convolved time series
         """
+        return self._convolve_kernel(array, ep=ep, trim=trim, stacklevel=3)
+
+    def _convolve_kernel(self, array, ep=None, trim="both", stacklevel=3):
+        """Implementation of `convolve`.
+
+        `stacklevel` is passed to the warning raised when the kernel is longer than an epoch,
+        so that it points to the caller of the public method (`convolve` or `smooth`).
+        """
         if not is_array_like(array):
             raise IOError(
                 "Input should be a numpy array (or jax array if pynajax is installed)."
@@ -497,7 +574,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             raise IOError("Array should be 1 or 2 dimension.")
 
         if trim not in ["both", "left", "right"]:
-            raise IOError("Unknow argument. trim should be 'both', 'left' or 'right'.")
+            raise IOError("Unknown argument. trim should be 'both', 'left' or 'right'.")
 
         time_array = self.index.values
         data_array = self.values
@@ -515,11 +592,28 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             time_array = time_array[idx]
             data_array = data_array[idx]
 
+        n_samples = np.searchsorted(time_array, ends, side="right") - np.searchsorted(
+            time_array, starts
+        )
+        too_short = n_samples < len(array)
+        if np.any(too_short):
+            warnings.warn(
+                f"Kernel size ({len(array)} samples) is larger than the number of samples in "
+                f"{np.sum(too_short)} out of {len(n_samples)} epochs (shortest epoch has "
+                f"{n_samples.min()} samples). The signal is zero-padded outside each epoch, so "
+                "every point of the output in those epochs is contaminated by the padding and "
+                "artifacts are expected. Consider decreasing the kernel/window size.",
+                UserWarning,
+                stacklevel=stacklevel,
+            )
+
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
-        return _initialize_tsd_output(
-            self, new_data_array, time_index=time_array, time_support=ep
-        )
+        # convolution preserves the (sorted, in-support) time index
+        with trusted_construction():
+            return _initialize_tsd_output(
+                self, new_data_array, time_index=time_array, time_support=ep
+            )
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
@@ -551,6 +645,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             >>> tsd.convolve(window)  # doctest: +SKIP
 
         It is generally a good idea to visualize the kernel before applying any convolution.
+
+        The signal is zero-padded outside of each epoch. A warning is raised if the gaussian
+        window is longer than the number of samples of one of the epochs. `windowsize` and
+        `size_factor` can be decreased to reduce the size of the window.
 
         See the scipy documentation for the [gaussian window](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.windows.gaussian.html)
 
@@ -606,7 +704,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         if norm:
             window = window / window.sum()
 
-        return self.convolve(window)
+        return self._convolve_kernel(window, stacklevel=3)
 
     def decimate(self, down, order=8, filter_type="iir", ep=None):
         """
@@ -692,9 +790,11 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             new_time[i_start : i_start + d] = self.t[slc][::down]
             i_start += d
 
-        return _initialize_tsd_output(
-            self, new_data, time_index=new_time, time_support=ep
-        )
+        # per-epoch downsampled times are sorted and within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(
+                self, new_data, time_index=new_time, time_support=ep
+            )
 
     def interpolate(self, ts, ep=None, left=None, right=None):
         """Wrapper of the numpy linear interpolation method. See [numpy interpolate](https://numpy.org/doc/stable/reference/generated/numpy.interp.html)
@@ -766,7 +866,11 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
             start += len(t)
 
-        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
+        # interpolation grid comes from a sorted target within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(
+                self, new_d, time_index=new_t, time_support=ep
+            )
 
     def derivative(self, ep=None):
         """Computes the derivative of the time series with respect to time. Wraps numpy.gradient.
@@ -827,7 +931,11 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
             start += len(tmp)
 
-        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
+        # per-epoch source timestamps are sorted and within `ep`
+        with trusted_construction():
+            return _initialize_tsd_output(
+                self, new_d, time_index=new_t, time_support=ep
+            )
 
     def to_trial_tensor(self, ep, align="start", padding_value=np.nan):
         """
@@ -1057,7 +1165,8 @@ class TsdTensor(_BaseTsd):
 
         if isinstance(index, Number):
             index = np.array([index])
-        return _initialize_tsd_output(self, output, time_index=index)
+        with trusted_construction(_index_preserves_order(key)):
+            return _initialize_tsd_output(self, output, time_index=index)
 
     @add_docstring("get_slice", _Base)
     def get_slice(self, start, end=None, time_unit="s"):
@@ -1857,9 +1966,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
                 kwargs["columns"] = columns
                 kwargs["metadata"] = self._metadata.loc[columns]
-                return _initialize_tsd_output(
-                    self, output, time_index=index, kwargs=kwargs
-                )
+                with trusted_construction(_index_preserves_order(key)):
+                    return _initialize_tsd_output(
+                        self, output, time_index=index, kwargs=kwargs
+                    )
             else:
                 return output
 
@@ -2432,7 +2542,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         xpos        10   20    30
         dtype: float64, shape: (5, 3)
 
-        To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
+        To add metadata with a keyword argument (pd.Series, numpy.ndarray, list or tuple):
 
         >>> ypos = pd.Series(index=tsdframe.columns, data = [10, 10, 10])
         >>> tsdframe.set_info(ypos=ypos)
@@ -2964,7 +3074,8 @@ class Tsd(_BaseTsd):
             index = np.array([key])
         else:
             index = self.index.__getitem__(key)
-        return _initialize_tsd_output(self, output, time_index=index, kwargs=kwargs)
+        with trusted_construction(_index_preserves_order(key)):
+            return _initialize_tsd_output(self, output, time_index=index, kwargs=kwargs)
 
     def as_series(self):
         """
@@ -3575,7 +3686,7 @@ class Tsd(_BaseTsd):
         return
 
 
-class Ts(_Base):
+class Ts(_ReconstructMixin, _Base):
     """
     Timestamps only object for a time series with only time index.
 
@@ -3602,34 +3713,35 @@ class Ts(_Base):
         """
         super().__init__(t, time_units, time_support)
 
-        if isinstance(time_support, IntervalSet) and len(self.index):
+        # Clip timestamps to time_support. Skipped under trusted construction;
+        # otherwise the same validation-preserving fast paths as _BaseTsd: an
+        # obvious/general no-op leaves index and rate untouched, and a real clip
+        # rebuilds the index as trusted (sorted float64 subset).
+        if (
+            isinstance(time_support, IntervalSet)
+            and len(self.index)
+            and not is_trusted_construction()
+        ):
             starts = time_support.start
             ends = time_support.end
-            idx = _restrict(self.index.values, starts, ends)
-            self.index = TsIndex(self.index.values[idx])
-            self.rate = self.index.shape[0] / np.sum(
-                time_support.values[:, 1] - time_support.values[:, 0]
+            time_array = self.index.values
+
+            covers_all = (
+                len(starts) == 1
+                and starts[0] <= time_array[0]
+                and time_array[-1] <= ends[0]
             )
+            if not covers_all:
+                idx = _restrict(time_array, starts, ends)
+                if len(idx) != len(time_array):
+                    with trusted_construction():
+                        self.index = TsIndex(time_array[idx])
+                    self.rate = self.index.shape[0] / np.sum(
+                        time_support.values[:, 1] - time_support.values[:, 0]
+                    )
 
         self.nap_class = self.__class__.__name__
         self._initialized = True
-
-    def _define_instance(self, time_index, time_support, values=None, **kwargs):
-        """
-        Define a new class instance.
-
-        Optional parameters for initialization are either passed to the function or are grabbed from self.
-        """
-        if values is None:
-            return self.__class__(t=time_index, time_support=time_support)
-        else:
-            return _initialize_tsd_output(
-                self,
-                values,
-                time_index=time_index,
-                time_support=time_support,
-                kwargs=kwargs,
-            )
 
     def __repr__(self):
         upper = "Time (s)"

@@ -9,11 +9,55 @@ as making sure that timestamps are property sorted before initializing any objec
     - `s`: seconds  (overall default)
 """
 
+import contextvars
+from contextlib import contextmanager
 from warnings import warn
 
 import numpy as np
 
 from .config import nap_config
+
+# Internal, context-local flag asserting that arrays handed to a constructor are
+# ALREADY canonical: float64, sorted, and (for the Tsd family) restricted to
+# their time support. When set, constructors skip the corresponding O(n)
+# validation/normalization steps that would otherwise be pure redundancy on data
+# produced by another pynapple operation.
+#
+# This is a hard internal invariant contract, NOT a user-facing option: enabling
+# it where the invariant does not hold yields silent data corruption rather than
+# a validation error. It must only ever wrap a single reconstruction whose inputs
+# are provably clean (see `trusted_construction`).
+_trust_construction = contextvars.ContextVar("_trust_construction", default=False)
+
+
+def is_trusted_construction():
+    """Return True when inside a :func:`trusted_construction` context."""
+    return _trust_construction.get()
+
+
+@contextmanager
+def trusted_construction(enabled=True):
+    """Assert that constructor inputs are already canonical (float64, sorted,
+    within support), so constructors skip revalidation.
+
+    Token-based set/reset makes it exception-safe, correctly nested, and isolated
+    per thread / async context. Wrap only the single reconstruction call, never a
+    whole method body, so incidental constructions are not accidentally trusted.
+
+    Parameters
+    ----------
+    enabled : bool
+        When False, this is a no-op (validation runs as usual). Lets a call site
+        assert cleanliness conditionally, e.g. only for order-preserving keys.
+    """
+    if not enabled:
+        yield
+        return
+    token = _trust_construction.set(True)
+    try:
+        yield
+    finally:
+        _trust_construction.reset(token)
 
 
 class TsIndex(np.ndarray):
@@ -110,9 +154,16 @@ class TsIndex(np.ndarray):
 
     def __new__(cls, t, time_units="s"):
         assert t.ndim == 1, "t should be 1 dimensional"
-        t = t.astype(np.float64)
-        t = TsIndex.format_timestamps(t, time_units)
-        t = TsIndex.sort_timestamps(t)
+        if not _trust_construction.get():
+            # canonicalize: cast to float64 (also a defensive copy so the index
+            # never aliases the caller's array), convert units, ensure sorted.
+            t = t.astype(np.float64)
+            t = TsIndex.format_timestamps(t, time_units)
+            t = TsIndex.sort_timestamps(t)
+        else:
+            # trusted: caller guarantees sorted, already in seconds. Still ensure
+            # float64, but copy only on dtype mismatch instead of unconditionally.
+            t = np.asarray(t, dtype=np.float64)
         obj = np.asarray(t).view(cls)
         return obj
 

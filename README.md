@@ -60,6 +60,21 @@ Community
 
 To ask any questions or get support for using pynapple, please consider joining our slack. Please send an email to thepynapple[at]gmail[dot]com to receive an invitation link.
 
+Using pynapple with Claude Code
+-------------------------------
+
+If you write pynapple code with [Claude Code](https://claude.com/claude-code), the
+[pynapple skill](https://github.com/pynapple-org/claude-skills) teaches it the library's idioms, so it reaches for
+`restrict`, `IntervalSet` and `compute_tuning_curves` instead of falling back on pandas-style loops:
+
+```
+/plugin marketplace add pynapple-org/claude-skills
+/plugin install using-pynapple@pynapple-skills
+/reload-plugins
+```
+
+Claude invokes the skill automatically once it detects pynapple code.
+
 Getting Started
 ---------------
 
@@ -156,7 +171,7 @@ Special thanks to Francesco P. Battaglia
 *neuroseries* (<https://github.com/NeuroNetMem/neuroseries>) packages,
 the latter constituting the core of *pynapple*.
 
-This package was developped by Guillaume Viejo
+This package was developed by Guillaume Viejo
 (<https://github.com/gviejo>) and other members of the Peyrache Lab.
 
 <!-- Logo: Sofia Skromne Carrasco, 2021. -->

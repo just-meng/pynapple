@@ -10,7 +10,7 @@ pynapple: python neural analysis package
 
    Installing <installing>
    User guide <user_guide>
-   Examples <examples>
+   Learning material <learning_material>
    API <api>
    External projects <external>
    About us <about>
@@ -30,35 +30,41 @@ pynapple: python neural analysis package
       (spike times, behavioral events, etc.) and time intervals 
       (trials, brain states, etc.). 
 
-      It also provides users with generic functions for 
-      neuroscience such as tuning curves, cross-correlograms 
+      It also provides users with generic functions for
+      neuroscience such as tuning curves, cross-correlograms
       and filtering.
 
-      .. grid:: auto
+.. grid:: auto
 
-         .. button-ref:: installing
-            :color: primary
-            :shadow:
+   .. button-ref:: installing
+      :color: primary
+      :shadow:
 
-            Installing
+      Installing
 
-         .. button-ref:: user_guide/01_introduction_to_pynapple
-            :color: primary
-            :shadow:
+   .. button-ref:: user_guide/01_introduction_to_pynapple
+      :color: primary
+      :shadow:
 
-            Getting started
+      Getting started
 
-         .. button-ref:: citing
-            :color: primary
-            :shadow:
+   .. button-ref:: citing
+      :color: primary
+      :shadow:
 
-            Citing
+      Citing
 
-         .. button-link:: https://pynapple-org.github.io/pynaviz/
-            :color: primary
-            :shadow:
+   .. button-link:: https://pynapple-org.github.io/pynaviz/
+      :color: primary
+      :shadow:
 
-            Visualization (pynaviz)
+      Visualization (pynaviz)
+
+   .. button-link:: https://github.com/pynapple-org/claude-skills
+      :color: primary
+      :shadow:
+
+      Claude Code skills
 
 
 .. grid:: 1 1 6 6

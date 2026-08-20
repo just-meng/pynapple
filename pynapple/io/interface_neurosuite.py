@@ -181,9 +181,19 @@ def parse_neuroscope_xml(xml_path):
         spike_groups.append(
             {
                 "channels": channels,
-                "n_samples": int(_text(group, "nSamples")),
-                "n_features": int(_text(group, "nFeatures")),
-                "peak_sample_index": int(_text(group, "peakSampleIndex")),
+                "n_samples": (
+                    int(_text(group, "nSamples")) if _text(group, "nSamples") else None
+                ),
+                "n_features": (
+                    int(_text(group, "nFeatures"))
+                    if _text(group, "nFeatures")
+                    else None
+                ),
+                "peak_sample_index": (
+                    int(_text(group, "peakSampleIndex"))
+                    if _text(group, "peakSampleIndex")
+                    else None
+                ),
             }
         )
 
@@ -193,18 +203,19 @@ def parse_neuroscope_xml(xml_path):
     # Units (clusters)
     # --------------------
     units = []
-    for unit in root.find("units").findall("unit"):
-        units.append(
-            {
-                "group": int(_text(unit, "group")),
-                "cluster": int(_text(unit, "cluster")),
-                "structure": _text(unit, "structure"),
-                "type": _text(unit, "type"),
-                "isolation_distance": _text(unit, "isolationDistance"),
-                "quality": _text(unit, "quality"),
-                "notes": _text(unit, "notes"),
-            }
-        )
+    if root.find("units") is not None:
+        for unit in root.find("units").findall("unit"):
+            units.append(
+                {
+                    "group": int(_text(unit, "group")),
+                    "cluster": int(_text(unit, "cluster")),
+                    "structure": _text(unit, "structure"),
+                    "type": _text(unit, "type"),
+                    "isolation_distance": _text(unit, "isolationDistance"),
+                    "quality": _text(unit, "quality"),
+                    "notes": _text(unit, "notes"),
+                }
+            )
 
     out["units"] = units
 

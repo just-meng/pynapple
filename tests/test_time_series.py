@@ -641,7 +641,7 @@ class TestTimeSeriesGeneral:
                 tsd.convolve(np.ones(3), trim="a")
             assert (
                 str(e_info.value)
-                == "Unknow argument. trim should be 'both', 'left' or 'right'."
+                == "Unknown argument. trim should be 'both', 'left' or 'right'."
             )
 
             with pytest.raises(IOError) as e_info:
@@ -651,6 +651,62 @@ class TestTimeSeriesGeneral:
             with pytest.raises(IOError) as e_info:
                 tsd.convolve(np.ones(3), ep=[1, 2, 3, 4])
             assert str(e_info.value) == "ep should be an object of type IntervalSet"
+
+    @pytest.mark.parametrize(
+        "kernel_size, expected",
+        [
+            (99, None),
+            (100, None),
+            (
+                101,
+                "Kernel size (101 samples) is larger than the number of samples in "
+                "1 out of 1 epochs (shortest epoch has 100 samples).",
+            ),
+        ],
+    )
+    def test_convolve_warns_kernel_larger_than_epoch(self, tsd, kernel_size, expected):
+        if not isinstance(tsd, nap.Ts):
+            if expected is None:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error")
+                    tsd.convolve(np.ones(kernel_size))
+            else:
+                with pytest.warns(UserWarning) as record:
+                    tsd.convolve(np.ones(kernel_size))
+                message = str(record[0].message)
+                assert message.startswith(expected)
+                assert "zero-padded" in message
+                # the warning points to the caller, not to pynapple internals
+                assert record[0].filename == __file__
+
+    def test_convolve_warns_only_for_short_epochs(self, tsd):
+        if not isinstance(tsd, nap.Ts):
+            # 11 samples in the first epoch, 40 in the second one
+            ep = nap.IntervalSet(start=[0, 60], end=[10, 99])
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                tsd.convolve(np.ones(11), ep=ep)
+
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    "Kernel size (12 samples) is larger than the number of samples in "
+                    "1 out of 2 epochs (shortest epoch has 11 samples)."
+                ),
+            ):
+                tsd.convolve(np.ones(12), ep=ep)
+
+    def test_smooth_warns_kernel_larger_than_epoch(self, tsd):
+        if not isinstance(tsd, nap.Ts):
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                tsd.smooth(std=2, windowsize=10)
+
+            with pytest.warns(UserWarning, match="zero-padded") as record:
+                tsd.smooth(std=1)
+            # the warning points to the `smooth` call, not to the internal convolution
+            assert record[0].filename == __file__
 
     def test_convolve_1d_kernel(self, tsd):
         array = np.random.randn(10)

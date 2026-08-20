@@ -248,6 +248,21 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         start = TsIndex.format_timestamps(start, time_units)
         end = TsIndex.format_timestamps(end, time_units)
 
+        nan_mask = np.isnan(start) | np.isnan(end)
+        if np.any(nan_mask):
+            warnings.warn(
+                f"{nan_mask.sum()} row(s) with NaN start/end time(s) were dropped.",
+                stacklevel=2,
+            )
+            valid = ~nan_mask
+            start = start[valid]
+            end = end[valid]
+            if metadata is not None:
+                if isinstance(metadata, pd.DataFrame):
+                    metadata = metadata.iloc[valid].reset_index(drop=True)
+                elif isinstance(metadata, dict):
+                    metadata = {k: np.array(v)[valid] for k, v in metadata.items()}
+
         drop_meta = False
         if not (np.diff(start) > 0).all():
             if metadata is not None:
@@ -760,7 +775,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         threshold : numeric
             Time threshold for "short" intervals
         time_units : None, optional
-            The time units for the treshold ('us', 'ms', 's' [default])
+            The time units for the threshold ('us', 'ms', 's' [default])
 
         Returns
         -------
@@ -781,7 +796,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         threshold : numeric
             Time threshold for "long" intervals
         time_units : None, optional
-            The time units for the treshold ('us', 'ms', 's' [default])
+            The time units for the threshold ('us', 'ms', 's' [default])
 
         Returns
         -------
@@ -947,7 +962,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     def split(self, interval_size, time_units="s"):
         """Split `IntervalSet` to a new `IntervalSet` with each interval being of size `interval_size`.
 
-        Used mostly for chunking very large dataset or looping throught multiple epoch of same duration.
+        Used mostly for chunking very large dataset or looping through multiple epoch of same duration.
 
         This function skips the epochs that are shorter than `interval_size`.
 

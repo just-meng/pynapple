@@ -117,7 +117,7 @@ print(ts)
 ### [`nap.TsGroup`](pynapple.TsGroup): group of timestamps
 
 
-[`TsGroup`](pynapple.TsGroup) is a dictionnary that stores multiple time series with different time stamps (.i.e. a group of neurons with different spike times from one session). The first argument `data` can be a dictionnary of `Ts`, `Tsd` or numpy 1d array.
+[`TsGroup`](pynapple.TsGroup) is a dictionary that stores multiple time series with different time stamps (.i.e. a group of neurons with different spike times from one session). The first argument `data` can be a dictionary of `Ts`, `Tsd` or numpy 1d array.
 
 
 ```{code-cell} ipython3
@@ -140,7 +140,7 @@ Interaction between pynapple objects
 ### Time support : attribute of time series
 
 
-A key feature of how pynapple manipulates time series is an inherent time support object defined for `Ts`, `Tsd`, `TsdFrame` and `TsGroup` objects. The time support object is defined as an `IntervalSet` that provides the time serie with a context. For example, the restrict operation will automatically update the time support object for the new time series. Ideally, the time support object should be defined for all time series when instantiating them. If no time series is given, the time support is inferred from the start and end of the time series.
+A key feature of how pynapple manipulates time series is an inherent time support object defined for `Ts`, `Tsd`, `TsdFrame` and `TsGroup` objects. The time support object is defined as an `IntervalSet` that provides the time series with a context. For example, the restrict operation will automatically update the time support object for the new time series. Ideally, the time support object should be defined for all time series when instantiating them. If no time series is given, the time support is inferred from the start and end of the time series.
 
 In this example, a `Tsd` is instantiated with and without a time support of intervals 0 to 5 seconds. Notice how the shape of the `Tsd` varies.
 
@@ -412,7 +412,7 @@ my.nwb
 ┕━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
 ```
 
-The returned object behaves like a dictionnary. The first column indicates the keys. The second column indicate the object type.
+The returned object behaves like a dictionary. The first column indicates the keys. The second column indicate the object type.
 
 ```
 print(nwb['units'])
@@ -438,7 +438,7 @@ This module analyses discrete events, specifically correlograms (for example by 
 
 **[Bayesian decoding](07_decoding)**
 
-The decoding module perfoms bayesian decoding given a set of tuning curves and a `TsGroup`.
+The decoding module performs bayesian decoding given a set of tuning curves and a `TsGroup`.
 
 **[Filtering](12_filtering)**
 

@@ -392,7 +392,7 @@ class TsGroup(UserDict, _MetadataMixin):
             if len(key) != self.__len__():
                 raise IndexError(
                     "Boolean index length must be equal to the number of Ts in the group! "
-                    f"The number of Ts is {self.__len__()}, but the bolean array"
+                    f"The number of Ts is {self.__len__()}, but the boolean array"
                     f"has length {len(key)} instead!"
                 )
             key = self.index[key]
@@ -702,11 +702,11 @@ class TsGroup(UserDict, _MetadataMixin):
     @add_or_convert_metadata
     def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
         """
-        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
+        Count occurrences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
 
         1. *tsgroup.count(bin_size=1, time_units = 'ms')*
-        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
+        -> Count occurrence of events within a 1 ms bin defined on the time support of the object.
 
         2. *tsgroup.count(1, ep=my_epochs)*
         -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
@@ -1171,7 +1171,7 @@ class TsGroup(UserDict, _MetadataMixin):
         Raises
         ------
         RuntimeError
-            Raise eror is operation is not recognized.
+            Raise error is operation is not recognized.
 
         Examples
         --------
@@ -1182,7 +1182,7 @@ class TsGroup(UserDict, _MetadataMixin):
         ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
         >>> tsgroup = nap.TsGroup(tmp)
 
-        This exemple shows how to get a new TsGroup with all elements for which the rate is above 1.
+        This example shows how to get a new TsGroup with all elements for which the rate is above 1.
 
         >>> newtsgroup = tsgroup.getby_threshold('rate', 1, op='>')
         >>> newtsgroup
@@ -1233,7 +1233,7 @@ class TsGroup(UserDict, _MetadataMixin):
         ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
         >>> tsgroup = nap.TsGroup(tmp, metadata={"alpha": np.arange(3)})
 
-        This exemple shows how to bin the TsGroup according to one metainfo key.
+        This example shows how to bin the TsGroup according to one metainfo key.
 
         >>> newtsgroup, bincenter = tsgroup.getby_intervals('alpha', [0, 1, 2])
         >>> newtsgroup[0]
@@ -1284,7 +1284,7 @@ class TsGroup(UserDict, _MetadataMixin):
         ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
         >>> tsgroup = nap.TsGroup(tmp, metadata={"group": [0, 1, 1]})
 
-        This exemple shows how to group the TsGroup according to one metainfo key.
+        This example shows how to group the TsGroup according to one metainfo key.
 
         >>> newtsgroup = tsgroup.getby_category('group')
         >>> newtsgroup[0]

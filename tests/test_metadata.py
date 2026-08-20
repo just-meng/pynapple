@@ -453,7 +453,7 @@ class TestIntervalSetMetadata:
                 # key should match metadata
                 does_not_raise(),
             ),
-            # existing metdata
+            # existing metadata
             (
                 "label",
                 # no warning with set_info
@@ -608,7 +608,7 @@ class TestTsdFrameMetadata:
                 # key should match metadata
                 does_not_raise(),
             ),
-            # existing metdata
+            # existing metadata
             (
                 "l1",
                 # attribute exists
@@ -751,7 +751,7 @@ class TestTsGroupMetadata:
                 # get key is metadata
                 does_not_raise(),
             ),
-            # existing metdata
+            # existing metadata
             (
                 "label",
                 # no warning with set_info
@@ -2041,12 +2041,12 @@ class TestMetadataDict:
             if isinstance(loc, tuple):
                 np.testing.assert_array_equal(meta.loc[loc].index, index[loc[0]])
                 if isinstance(loc[1], str):
-                    # tuple that retuns some value
+                    # tuple that returns some value
                     np.testing.assert_array_equal(
                         meta.loc[loc][loc[1]], data[loc[1]][loc[0]]
                     )
                 else:
-                    # tuple that retuns a _Metadata object
+                    # tuple that returns a _Metadata object
                     for key in loc[1]:
                         np.testing.assert_array_equal(
                             meta.loc[loc][key], data[key][loc[0]]
@@ -2200,7 +2200,7 @@ class TestMetadataDict:
     )
     def test_metadata_dict_drop(self, index, data, dropped):
         """
-        Test dropping metdata from the metadata dictionary directly
+        Test dropping metadata from the metadata dictionary directly
         """
         meta = _Metadata(index, data)
         meta["info"] = [2] * len(index)

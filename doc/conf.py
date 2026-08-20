@@ -130,6 +130,8 @@ html_context = {
 
 html_sidebars = {
     "index": [],
+    # This page has no sub-pages to navigate, so show its own sections instead.
+    "learning_material": ["search-field.html", "page-toc.html"],
     "installing": [],
     "about": [],
     "releases": [],
@@ -168,3 +170,6 @@ nb_execution_timeout = 60 * 15
 # Execute notebooks during the build:
 nb_execution_mode = "cache"
 nb_execution_raise_on_error = True
+# Print the failing cell's traceback, otherwise the build only reports that
+# some cell raised, which is useless in CI logs.
+nb_execution_show_tb = True
