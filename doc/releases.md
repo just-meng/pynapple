@@ -2,8 +2,6 @@
 
 ### Unreleased
 
-- `compute_event_triggered_average` accepts an `IntervalSet` and uses each
-  interval start as an event.
 
 ### 0.11.4 (2026-08-19)
 
